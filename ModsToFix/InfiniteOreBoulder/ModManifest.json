@@ -1,0 +1,21 @@
+{
+    "guid": "b074c5f9040141fab16fce19cf361a2b",
+    "name": "InfiniteOreBoulder",
+    "skipSafetyChecks": false,
+    "disableScripts": false,
+    "accessesExtraAssemblies": true,
+    "disableHarmonyPatching": false,
+    "requiredOn": 3,
+    "files": [
+        {
+            "path": "Scripts/InfiniteOreBoulderMod.cs"
+        },
+        {
+            "path": "Scripts/InfiniteBoulderSystem.cs"
+        },
+        {
+            "path": "Scripts/Generated/InfiniteBoulderSystem__System_6589417270.g.cs"
+        }
+    ],
+    "dependencies": []
+}

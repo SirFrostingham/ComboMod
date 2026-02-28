@@ -1,0 +1,24 @@
+{
+    "guid": "e5682ee28739474792d8801d091fd88a",
+    "name": "AutoDoor",
+    "skipSafetyChecks": false,
+    "disableScripts": false,
+    "accessesExtraAssemblies": true,
+    "disableHarmonyPatching": false,
+    "requiredOn": 3,
+    "files": [
+        {
+            "path": "Scripts/AutoDoorMod.cs"
+        },
+        {
+            "path": "Scripts/Generated/AutoDoorMod__System_21440797560.g.cs"
+        },
+        {
+            "path": "Scripts/Generated/AutoDoorMod__System_21440797561.g.cs"
+        },
+        {
+            "path": "Bundles/AutoDoor_Windows.assetbundle"
+        }
+    ],
+    "dependencies": []
+}

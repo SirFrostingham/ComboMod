@@ -1,0 +1,21 @@
+{
+    "guid": "81d350dd65ca4cb0ac6c7ce26ec07dd5",
+    "name": "all-skill-perks",
+    "skipSafetyChecks": false,
+    "disableScripts": false,
+    "accessesExtraAssemblies": true,
+    "disableHarmonyPatching": false,
+    "requiredOn": 3,
+    "files": [
+        {
+            "path": "Scripts/AllSkillPerks.cs"
+        },
+        {
+            "path": "Bundles/all-skill-perks_Windows.assetbundle"
+        },
+        {
+            "path": "Bundles/all-skill-perks_Linux.assetbundle"
+        }
+    ],
+    "dependencies": []
+}

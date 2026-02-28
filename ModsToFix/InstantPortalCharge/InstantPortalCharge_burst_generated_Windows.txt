@@ -1,0 +1,21 @@
+Library: InstantPortalCharge_burst_generated_Windows
+--platform=Windows
+--backend=burst-llvm-16
+--target=X64_SSE2
+--global-safety-checks-setting=Off
+--meta-data-generation=False
+--dump=Function
+--float-precision=Standard
+--target-framework=NetFramework
+--format=Coff
+--disable-warnings=BC1370
+--temp-folder=C:\Users\ILYA\AppData\Local\Temp\
+--decode-folder=C:\Projects\Unity\Projects\CoreKeeperMods\SDK Mods
+--output=C:\SteamLibrary\steamapps\common\Core Keeper\CoreKeeper_Data\StreamingAssets\Mods\InstantPortalCharge\InstantPortalCharge_burst_generated_Windows
+--root-assembly=C:/Projects/Unity/Projects/CoreKeeperMods/SDK Mods/Assets\..\Temp\ModBurst\Assemblies\InstantPortalCharge.dll
+--root-assembly=C:/Projects/Unity/Projects/CoreKeeperMods/SDK Mods/Assets\..\Temp\ModBurst\Assemblies\InstantPortalCharge.dll
+--assembly-folder=C:/Projects/Unity/Projects/CoreKeeperMods/SDK Mods/Assets\..\Temp\ModBurst\Assemblies
+--assembly-folder=C:/Projects/Unity/Projects/CoreKeeperMods/SDK Mods/Assets\..\Temp\ModBurst\Assemblies
+--method=Unity.Entities.JobChunkExtensions+JobChunkProducer`1[[InstantPortalCharge.PortalChargeSystem+PortalCharge_Job, InstantPortalCharge, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], Unity.Entities, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::Execute(Unity.Entities.JobChunkExtensions+JobChunkWrapper`1[[InstantPortalCharge.PortalChargeSystem+PortalCharge_Job, InstantPortalCharge, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]&, Unity.Entities, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Jobs.LowLevel.Unsafe.JobRanges&, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089)--fa6ff2f4ef052b4713f17118463adf9f
+--method=Unity.Entities.JobChunkExtensions+JobChunkProducer`1[[InstantPortalCharge.PortalChargeSystem+WayPointCharge_Job, InstantPortalCharge, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], Unity.Entities, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::Execute(Unity.Entities.JobChunkExtensions+JobChunkWrapper`1[[InstantPortalCharge.PortalChargeSystem+WayPointCharge_Job, InstantPortalCharge, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]&, Unity.Entities, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Jobs.LowLevel.Unsafe.JobRanges&, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089)--bdb716b716bb52e3b04724f17bcdbc2f
+

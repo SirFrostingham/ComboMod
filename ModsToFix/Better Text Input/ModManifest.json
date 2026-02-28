@@ -1,0 +1,36 @@
+{
+    "guid": "7e94558123c6472e9e00217b0778a472",
+    "name": "BetterTextInput",
+    "skipSafetyChecks": false,
+    "disableScripts": false,
+    "accessesExtraAssemblies": true,
+    "disableHarmonyPatching": false,
+    "requiredOn": 3,
+    "files": [
+        {
+            "path": "Scripts/TextInputController.cs"
+        },
+        {
+            "path": "Scripts/Patches/TextManager_Patch.cs"
+        },
+        {
+            "path": "Scripts/Patches/TextInput_Patches.cs"
+        },
+        {
+            "path": "Scripts/Patches/MenuManager_Patch.cs"
+        },
+        {
+            "path": "Scripts/Patches/InputManager_Patch.cs"
+        },
+        {
+            "path": "Scripts/BetterTextMod.cs"
+        },
+        {
+            "path": "Libraries/BetterTextInput.Access.dll"
+        },
+        {
+            "path": "Bundles/BetterTextInput_Windows.assetbundle"
+        }
+    ],
+    "dependencies": []
+}

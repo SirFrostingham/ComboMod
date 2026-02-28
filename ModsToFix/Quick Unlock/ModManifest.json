@@ -1,0 +1,21 @@
+{
+    "guid": "94b6acbf0d8b4644b3ff7942b51c4c92",
+    "name": "quick-unlock",
+    "skipSafetyChecks": false,
+    "disableScripts": false,
+    "accessesExtraAssemblies": true,
+    "disableHarmonyPatching": false,
+    "requiredOn": 3,
+    "files": [
+        {
+            "path": "Scripts/QuickUnlock.cs"
+        },
+        {
+            "path": "Bundles/quick-unlock_Windows.assetbundle"
+        },
+        {
+            "path": "Bundles/quick-unlock_Linux.assetbundle"
+        }
+    ],
+    "dependencies": []
+}

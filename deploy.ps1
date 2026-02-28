@@ -1,0 +1,176 @@
+# ============================================================
+# ComboMod — Deploy Script
+# Copies mod files to the Core Keeper mods directory,
+# clears the compile cache, and publishes to mod.io.
+# ============================================================
+# SECURITY: Keep this file private — it contains your mod.io API key.
+
+$ModName    = "ComboMod"
+$ModsDir    = "$env:USERPROFILE\AppData\LocalLow\Pugstorm\Core Keeper\Steam\10717115\mods"
+$Dest       = "$ModsDir\$ModName"
+$Source     = $PSScriptRoot   # the folder containing this script
+$ZipOut     = "$Source\$ModName.zip"
+
+# mod.io config — credentials live in secrets.ps1 (git-ignored)
+# Copy secrets.example.ps1 -> secrets.ps1 and fill in your values.
+$secretsFile = Join-Path $PSScriptRoot "secrets.ps1"
+if (-not (Test-Path $secretsFile)) {
+    Write-Error "Missing secrets.ps1 -- copy secrets.example.ps1 to secrets.ps1 and fill in credentials."
+    exit 1
+}
+. $secretsFile
+$ModioGameId  = 5289
+$ModioModId   = 5824265
+
+# ---- 1. Read + bump deploy version ----------------------------
+# ComboMod is a pack of many files (no single ComboMod.cs), so keep deploy
+# version in a dedicated file used for mod.io uploads.
+$VersionFile = Join-Path $Source "deploy.version.txt"
+if (-not (Test-Path $VersionFile)) {
+    $oldVersion = "0.0.0"
+} else {
+    $oldVersion = (Get-Content $VersionFile -Raw).Trim()
+    if (-not $oldVersion) { $oldVersion = "0.0.0" }
+}
+
+if ($oldVersion -notmatch '^\d+\.\d+\.\d+$') {
+    throw "deploy.version.txt must be in x.y.z format. Found: $oldVersion"
+}
+
+$parts = $oldVersion -split '\.'
+$parts[-1] = [int]$parts[-1] + 1
+$newVersion = ($parts -join '.')
+Set-Content -Path $VersionFile -Value $newVersion
+Write-Host "[ComboMod] Version bumped: $oldVersion -> $newVersion"
+
+# ---- Build the staged layout from root ModManifest.json -------
+$manifestPath = Join-Path $Source "ModManifest.json"
+if (-not (Test-Path $manifestPath)) {
+    throw "Missing ModManifest.json at $manifestPath"
+}
+
+$manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+if (-not $manifest.files -or $manifest.files.Count -eq 0) {
+    throw "ModManifest.json has no files[] entries to stage."
+}
+
+$StagedRoot = Join-Path $Source "_staged"
+$Staged     = Join-Path $StagedRoot $ModName
+if (Test-Path $StagedRoot) { Remove-Item $StagedRoot -Recurse -Force }
+New-Item -ItemType Directory -Path $Staged | Out-Null
+
+# Always include the root ModManifest
+Copy-Item $manifestPath (Join-Path $Staged "ModManifest.json") -Force
+
+# Copy each file listed in files[] to the same relative path under the staged dir
+foreach ($entry in $manifest.files) {
+    $relativePath = ($entry.path -replace '/', '\')
+    $srcPath      = Join-Path $Source $relativePath
+
+    if (-not (Test-Path $srcPath)) {
+        throw "Manifest entry not found on disk: $relativePath"
+    }
+
+    $destPath = Join-Path $Staged $relativePath
+    $destDir  = Split-Path $destPath -Parent
+    if (-not (Test-Path $destDir)) {
+        New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+    }
+
+    Copy-Item $srcPath $destPath -Force
+}
+
+Write-Host "[ComboMod] Staged to: $Staged"
+
+# ---- 2. Install to local mods directory ---------------------
+if (Test-Path $Dest) {
+    Write-Host "[ComboMod] Removing existing install at: $Dest"
+    Remove-Item $Dest -Recurse -Force
+}
+# Create dest dir and copy contents directly (avoids double-nesting if Dest survives Remove-Item)
+New-Item -ItemType Directory -Path $Dest -Force | Out-Null
+Copy-Item "$Staged\*" $Dest -Recurse -Force
+Write-Host "[ComboMod] Installed to: $Dest"
+
+# ---- 2b. Delete the compiled mod cache ----------------------
+# The game caches the compiled DLL in LocalAppData\Temp. If the cache exists and
+# is newer than the .cs source, the game skips recompilation and runs stale code.
+# Deleting it forces a fresh Roslyn compile on next game start.
+$ModCache = "$env:LOCALAPPDATA\Temp\Pugstorm\Core Keeper\ModLoader\$ModName"
+if (Test-Path $ModCache) {
+    Remove-Item $ModCache -Recurse -Force
+    Write-Host "[ComboMod] Cleared mod compile cache: $ModCache"
+} else {
+    Write-Host "[ComboMod] No compile cache found (clean slate)."
+}
+
+# ---- 3. Create distributable zip ----------------------------
+# Use "$Staged\*" (not $Staged) so the zip root contains ModManifest.json + Scripts/
+# directly, without a ComboMod\ wrapper folder. mod.io places the zip contents
+# into the mod folder automatically, so the extra wrapper causes double-nesting.
+# Write to a temp file first, then replace — avoids lock failures when VS Code
+# or Explorer has the previous zip open.
+$ZipTmp = "$Source\_ComboMod_new.zip"
+if (Test-Path $ZipTmp) { Remove-Item $ZipTmp -Force }
+Compress-Archive -Path "$Staged\*" -DestinationPath $ZipTmp -Force
+if (-not (Test-Path $ZipTmp)) { throw "Zip was not created: $ZipTmp" }
+if (Test-Path $ZipOut) { Remove-Item $ZipOut -Force -ErrorAction SilentlyContinue }
+Move-Item $ZipTmp $ZipOut -Force
+$zipSize = (Get-Item $ZipOut).Length
+Write-Host "[ComboMod] Zip created: $ZipOut ($zipSize bytes, $(Get-Date -Format 'HH:mm:ss'))"
+
+# ---- 4. Publish to mod.io ----------------------------------
+$modVersion = $newVersion
+$changelog  = "Auto-deployed v$modVersion via deploy.ps1"
+
+if (-not $ModioOAuthToken) {
+    Write-Warning "[ComboMod] Skipping mod.io publish -- set ModioOAuthToken in secrets.ps1."
+    Write-Warning "           Get a token at: https://mod.io/me/access  (OAuth 2 Access -> Generate Token)"
+} else {
+Write-Host "[ComboMod] Publishing v$modVersion to mod.io..."
+try {
+    Add-Type -AssemblyName System.Net.Http
+
+    # File uploads require OAuth2 Bearer token (API keys are read-only).
+    $uri    = "https://api.mod.io/v1/games/$ModioGameId/mods/$ModioModId/files"
+    $client = New-Object System.Net.Http.HttpClient
+    $client.DefaultRequestHeaders.Authorization =
+        New-Object System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", $ModioOAuthToken)
+
+    $multipart = New-Object System.Net.Http.MultipartFormDataContent
+
+    # Attach zip
+    $fileStream   = [System.IO.File]::OpenRead($ZipOut)
+    $fileContent  = New-Object System.Net.Http.StreamContent($fileStream)
+    $fileContent.Headers.ContentType =
+        [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("application/zip")
+    $multipart.Add($fileContent, "filedata", [System.IO.Path]::GetFileName($ZipOut))
+
+    # Other fields
+    $multipart.Add([System.Net.Http.StringContent]::new($modVersion), "version")
+    $multipart.Add([System.Net.Http.StringContent]::new($changelog),  "changelog")
+    $multipart.Add([System.Net.Http.StringContent]::new("1"),          "active")
+
+    $res     = $client.PostAsync($uri, $multipart).Result
+    $body    = $res.Content.ReadAsStringAsync().Result
+    $fileStream.Close()
+
+    if ($res.IsSuccessStatusCode) {
+        $json = $body | ConvertFrom-Json
+        Write-Host "[ComboMod] mod.io upload OK - file id: $($json.id), version: $($json.version)"
+    } else {
+        Write-Warning "[ComboMod] mod.io upload failed (HTTP $([int]$res.StatusCode)): $body"
+    }
+}
+catch {
+    Write-Warning "[ComboMod] mod.io upload FAILED: $($_.Exception.Message)"
+}
+} # end if $ModioOAuthToken
+
+# ---- 5. Cleanup staged folder --------------------------------
+Remove-Item "$Source\_staged" -Recurse -Force
+
+Write-Host ""
+Write-Host "Done!"
+Write-Host "  Local install : $Dest"
+Write-Host "  mod.io page   : https://mod.io/g/corekeeper/m/combomod"

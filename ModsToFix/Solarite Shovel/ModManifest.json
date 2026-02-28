@@ -1,0 +1,24 @@
+{
+    "guid": "25dbe0f303fa49448acf99b93917f478",
+    "name": "Solarite Shovel",
+    "skipSafetyChecks": false,
+    "disableScripts": false,
+    "accessesExtraAssemblies": true,
+    "disableHarmonyPatching": false,
+    "requiredOn": 3,
+    "files": [
+        {
+            "path": "Localization/Localization.csv"
+        },
+        {
+            "path": "Scripts/Scripts/SolariteShovelMod.cs"
+        },
+        {
+            "path": "Bundles/Solarite Shovel_Windows.assetbundle"
+        },
+        {
+            "path": "Bundles/Solarite Shovel_Linux.assetbundle"
+        }
+    ],
+    "dependencies": []
+}

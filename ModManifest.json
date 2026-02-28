@@ -1,0 +1,56 @@
+{
+    "guid": "f3c1e0d4a8b24d8cae0dd4b2f7c6a119",
+    "name": "ComboMod",
+    "skipSafetyChecks": false,
+    "disableScripts": false,
+    "accessesExtraAssemblies": true,
+    "disableHarmonyPatching": false,
+    "requiredOn": 3,
+    "files": [
+        { "path": "ModsToFix/All Skill Perks/Scripts/AllSkillPerks.cs" },
+        { "path": "ModsToFix/All Skill Perks/Bundles/all-skill-perks_Windows.assetbundle" },
+        { "path": "ModsToFix/All Skill Perks/Bundles/all-skill-perks_Linux.assetbundle" },
+
+        { "path": "ModsToFix/AutoDoors/Scripts/AutoDoorMod.cs" },
+        { "path": "ModsToFix/AutoDoors/Scripts/Generated/AutoDoorMod__System_21440797560.g.cs" },
+        { "path": "ModsToFix/AutoDoors/Scripts/Generated/AutoDoorMod__System_21440797561.g.cs" },
+        { "path": "ModsToFix/AutoDoors/Bundles/AutoDoor_Windows.assetbundle" },
+
+        { "path": "ModsToFix/Better Text Input/Scripts/TextInputController.cs" },
+        { "path": "ModsToFix/Better Text Input/Scripts/Patches/TextManager_Patch.cs" },
+        { "path": "ModsToFix/Better Text Input/Scripts/Patches/TextInput_Patches.cs" },
+        { "path": "ModsToFix/Better Text Input/Scripts/Patches/MenuManager_Patch.cs" },
+        { "path": "ModsToFix/Better Text Input/Scripts/Patches/InputManager_Patch.cs" },
+        { "path": "ModsToFix/Better Text Input/Scripts/BetterTextMod.cs" },
+        { "path": "ModsToFix/Better Text Input/Libraries/BetterTextInput.Access.dll" },
+        { "path": "ModsToFix/Better Text Input/Bundles/BetterTextInput_Windows.assetbundle" },
+
+        { "path": "ModsToFix/Experience Tweaks/Scripts/ExperienceTweaks.cs" },
+        { "path": "ModsToFix/Experience Tweaks/Bundles/ExperienceTweaks_Windows.assetbundle" },
+        { "path": "ModsToFix/Experience Tweaks/Bundles/ExperienceTweaks_Linux.assetbundle" },
+
+        { "path": "ModsToFix/InfiniteOreBoulder/Scripts/InfiniteOreBoulderMod.cs" },
+        { "path": "ModsToFix/InfiniteOreBoulder/Scripts/InfiniteBoulderSystem.cs" },
+        { "path": "ModsToFix/InfiniteOreBoulder/Scripts/Generated/InfiniteBoulderSystem__System_6589417270.g.cs" },
+
+        { "path": "ModsToFix/InstantPortalCharge/Scripts/PortalChargeSystem.cs" },
+        { "path": "ModsToFix/InstantPortalCharge/Scripts/InstantPortalChargeMod.cs" },
+        { "path": "ModsToFix/InstantPortalCharge/Scripts/Generated/PortalChargeSystem__System_12107592360.g.cs" },
+
+        { "path": "ModsToFix/Keep inventory on death (for dedicated Servers)/Scripts/KeepInventorySystem.cs" },
+
+        { "path": "ModsToFix/More Map Reveal/Scripts/MoreMapReveal.cs" },
+        { "path": "ModsToFix/More Map Reveal/Bundles/MoreMapReveal_Windows.assetbundle" },
+        { "path": "ModsToFix/More Map Reveal/Bundles/MoreMapReveal_Linux.assetbundle" },
+
+        { "path": "ModsToFix/Quick Unlock/Scripts/QuickUnlock.cs" },
+        { "path": "ModsToFix/Quick Unlock/Bundles/quick-unlock_Windows.assetbundle" },
+        { "path": "ModsToFix/Quick Unlock/Bundles/quick-unlock_Linux.assetbundle" },
+
+        { "path": "ModsToFix/Solarite Shovel/Localization/Localization.csv" },
+        { "path": "ModsToFix/Solarite Shovel/Scripts/Scripts/SolariteShovelMod.cs" },
+        { "path": "ModsToFix/Solarite Shovel/Bundles/Solarite Shovel_Windows.assetbundle" },
+        { "path": "ModsToFix/Solarite Shovel/Bundles/Solarite Shovel_Linux.assetbundle" }
+    ],
+    "dependencies": []
+}
