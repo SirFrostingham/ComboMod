@@ -121,9 +121,7 @@ healthCd.health = healthCd.maxHealth;
             var entityQueryBuilder = new global::Unity.Entities.EntityQueryBuilder(global::Unity.Collections.Allocator.Temp);
             __query_1717227304_0 = 
                 entityQueryBuilder
-                    .WithAll<global::PugAutomationCD>()
                     .WithAll<global::DropsLootWhenDamagedCD>()
-                    .WithAll<global::MineableDamageDecreaseCD>()
                     .WithAllRW<global::HealthCD>()
                     .WithOptions(global::Unity.Entities.EntityQueryOptions.IncludeDisabledEntities)
                     .Build(ref state);

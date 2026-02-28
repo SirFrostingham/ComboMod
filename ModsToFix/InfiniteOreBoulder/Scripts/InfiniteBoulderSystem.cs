@@ -18,9 +18,7 @@ namespace InfiniteOreBoulder
                 })
                 .WithName("BoulderHeal")
                 .WithBurst()
-                .WithAll<PugAutomationCD>()
                 .WithAll<DropsLootWhenDamagedCD>()
-                .WithAll<MineableDamageDecreaseCD>()
                 .WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities)
                 .Schedule();
 

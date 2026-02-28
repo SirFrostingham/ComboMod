@@ -20,6 +20,7 @@
         { "path": "ModsToFix/Better Text Input/Scripts/Patches/TextManager_Patch.cs" },
         { "path": "ModsToFix/Better Text Input/Scripts/Patches/TextInput_Patches.cs" },
         { "path": "ModsToFix/Better Text Input/Scripts/Patches/MenuManager_Patch.cs" },
+        { "path": "ModsToFix/Better Text Input/Scripts/Patches/UIManager_InitSafety_Patch.cs" },
         { "path": "ModsToFix/Better Text Input/Scripts/Patches/InputManager_Patch.cs" },
         { "path": "ModsToFix/Better Text Input/Scripts/BetterTextMod.cs" },
         { "path": "ModsToFix/Better Text Input/Libraries/BetterTextInput.Access.dll" },

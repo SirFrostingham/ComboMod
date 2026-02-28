@@ -20,6 +20,9 @@
             "path": "Scripts/Patches/MenuManager_Patch.cs"
         },
         {
+            "path": "Scripts/Patches/UIManager_InitSafety_Patch.cs"
+        },
+        {
             "path": "Scripts/Patches/InputManager_Patch.cs"
         },
         {
