@@ -29,9 +29,6 @@
             "path": "Scripts/BetterTextMod.cs"
         },
         {
-            "path": "Libraries/BetterTextInput.Access.dll"
-        },
-        {
             "path": "Bundles/BetterTextInput_Windows.assetbundle"
         }
     ],

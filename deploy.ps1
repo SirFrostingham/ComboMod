@@ -80,6 +80,30 @@ foreach ($entry in $manifest.files) {
     Copy-Item $srcPath $destPath -Force
 }
 
+# Embed deploy/build metadata in staged output so each published zip is uniquely
+# versioned (prevents remote hosts from reusing a previous identical artifact).
+$gitCommit = "unknown"
+try {
+    $gitCommitOutput = (& git -C $Source rev-parse --short HEAD 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $gitCommitOutput) {
+        $gitCommit = ($gitCommitOutput | Select-Object -First 1).Trim()
+    }
+}
+catch {
+    # Non-fatal: keep git commit as "unknown" when git is unavailable.
+}
+
+$buildInfoPath = Join-Path $Staged "_combomod.build.txt"
+$buildInfo = @(
+    "version=$newVersion"
+    "built_utc=$([DateTime]::UtcNow.ToString('o'))"
+    "git_commit=$gitCommit"
+) -join [Environment]::NewLine
+Set-Content -Path $buildInfoPath -Value $buildInfo -Encoding UTF8
+
+# Also copy deploy.version.txt into the staged package for traceability.
+Copy-Item $VersionFile (Join-Path $Staged "deploy.version.txt") -Force
+
 Write-Host "[ComboMod] Staged to: $Staged"
 
 # ---- 2. Install to local mods directory ---------------------
@@ -92,16 +116,39 @@ New-Item -ItemType Directory -Path $Dest -Force | Out-Null
 Copy-Item "$Staged\*" $Dest -Recurse -Force
 Write-Host "[ComboMod] Installed to: $Dest"
 
-# ---- 2b. Delete the compiled mod cache ----------------------
-# The game caches the compiled DLL in LocalAppData\Temp. If the cache exists and
-# is newer than the .cs source, the game skips recompilation and runs stale code.
-# Deleting it forces a fresh Roslyn compile on next game start.
-$ModCache = "$env:LOCALAPPDATA\Temp\Pugstorm\Core Keeper\ModLoader\$ModName"
-if (Test-Path $ModCache) {
-    Remove-Item $ModCache -Recurse -Force
-    Write-Host "[ComboMod] Cleared mod compile cache: $ModCache"
-} else {
-    Write-Host "[ComboMod] No compile cache found (clean slate)."
+# ---- 2b. Delete compiled mod caches -------------------------
+# The game caches compiled scripts under LocalAppData\Temp\...\ModLoader.
+# If stale cache folders remain from previous standalone installs (or older
+# ComboMod layouts), Core Keeper can keep compiling/loading old script content.
+# Delete ComboMod cache + known bundled-module cache folders to force a clean
+# Roslyn compile on next game start.
+$CacheRoot = "$env:LOCALAPPDATA\Temp\Pugstorm\Core Keeper\ModLoader"
+$CacheTargets = @(
+    $ModName,
+    "all-skill-perks",
+    "AutoDoor",
+    "BetterTextInput",
+    "ExperienceTweaks",
+    "InfiniteOreBoulder",
+    "InstantPortalCharge",
+    "Keep Inventory On Death",
+    "MoreMapReveal",
+    "quick-unlock",
+    "Solarite Shovel"
+) | Select-Object -Unique
+
+$clearedAnyCache = $false
+foreach ($target in $CacheTargets) {
+    $cachePath = Join-Path $CacheRoot $target
+    if (Test-Path $cachePath) {
+        Remove-Item $cachePath -Recurse -Force
+        Write-Host "[ComboMod] Cleared mod compile cache: $cachePath"
+        $clearedAnyCache = $true
+    }
+}
+
+if (-not $clearedAnyCache) {
+    Write-Host "[ComboMod] No matching compile cache folders found (clean slate)."
 }
 
 # ---- 3. Create distributable zip ----------------------------
@@ -157,7 +204,13 @@ try {
 
     if ($res.IsSuccessStatusCode) {
         $json = $body | ConvertFrom-Json
-        Write-Host "[ComboMod] mod.io upload OK - file id: $($json.id), version: $($json.version)"
+        $uploadedVersion = [string]$json.version
+        Write-Host "[ComboMod] mod.io upload OK - file id: $($json.id), version: $uploadedVersion"
+        if ($uploadedVersion -ne $modVersion) {
+            Write-Warning "[ComboMod] Requested upload version '$modVersion' but mod.io reported '$uploadedVersion'."
+            Write-Warning "           This usually indicates remote version reuse/normalization."
+            Write-Warning "           Build metadata is now embedded per deploy to keep artifacts unique."
+        }
     } else {
         Write-Warning "[ComboMod] mod.io upload failed (HTTP $([int]$res.StatusCode)): $body"
     }

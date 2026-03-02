@@ -12,9 +12,6 @@
         },
         {
             "path": "Scripts/InstantPortalChargeMod.cs"
-        },
-        {
-            "path": "Scripts/Generated/PortalChargeSystem__System_12107592360.g.cs"
         }
     ],
     "dependencies": []

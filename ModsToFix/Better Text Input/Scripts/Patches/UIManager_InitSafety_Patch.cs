@@ -28,12 +28,11 @@ namespace BetterTextInput
             {
                 string details = __exception.ToString();
                 bool isExpandedChestUIIssue =
-                    details.IndexOf("ExpandedChestUI", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                    details.IndexOf("SetupChestUIOverride", StringComparison.OrdinalIgnoreCase) >= 0;
+                    details.IndexOf("ExpandedChestUI", StringComparison.OrdinalIgnoreCase) >= 0;
 
                 if (isExpandedChestUIIssue)
                 {
-                    BetterTextMod.Log("Suppressed ExpandedChestUI UI init exception to prevent black-screen startup failure. Update or disable ExpandedChestUI for a permanent fix.");
+                    BetterTextMod.Log("Suppressed ExpandedChestUI UIManager.Init exception to prevent black-screen startup failure. Update or disable ExpandedChestUI for a permanent fix.");
                     Debug.LogException(__exception);
                     return null;
                 }

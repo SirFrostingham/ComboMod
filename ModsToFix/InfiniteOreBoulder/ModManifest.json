@@ -12,9 +12,6 @@
         },
         {
             "path": "Scripts/InfiniteBoulderSystem.cs"
-        },
-        {
-            "path": "Scripts/Generated/InfiniteBoulderSystem__System_6589417270.g.cs"
         }
     ],
     "dependencies": []

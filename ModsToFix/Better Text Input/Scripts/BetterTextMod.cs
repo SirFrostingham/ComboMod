@@ -6,11 +6,12 @@ namespace BetterTextInput
 {
     public class BetterTextMod : IMod
     {
-        public const string VERSION = "2.3.4";
+        public const string VERSION = "2.3.5";
         public const string NAME = "BetterTextInput";
+        internal const string KoreanFontAssetPath = "Assets/Mods/BetterTextInput/Fonts/Galmuri9.asset";
+        private const bool ENABLE_KOREAN_CUSTOM_FONT_OVERRIDE = false;
         private static LoadedMod modInfo;
-        public static bool useKoreanCustomFont = true;
-        internal static AssetBundle AssetBundle => modInfo.AssetBundles[0];
+        public static bool useKoreanCustomFont = false;
 
         internal static GameObject characterMarkBlinker;
         internal static GameObject characterMark;
@@ -34,16 +35,64 @@ namespace BetterTextInput
             return API.ModLoader.LoadedMods.FirstOrDefault(modInfo => modInfo.Handlers.Contains(mod));
         }
 
+        internal static bool TryLoadAssetFromAnyBundle<T>(string assetPath, out T asset) where T : Object
+        {
+            asset = null;
+
+            if (modInfo == null || modInfo.AssetBundles == null || !modInfo.AssetBundles.Any())
+            {
+                Log($"No asset bundles available while trying to load '{assetPath}'.");
+                return false;
+            }
+
+            foreach (var bundle in modInfo.AssetBundles)
+            {
+                if (bundle == null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (!bundle.Contains(assetPath))
+                    {
+                        continue;
+                    }
+
+                    asset = bundle.LoadAsset<T>(assetPath);
+                    if (asset != null)
+                    {
+                        return true;
+                    }
+                }
+                catch
+                {
+                    // Ignore invalid bundle lookups and continue scanning.
+                }
+            }
+
+            Log($"Asset not found in loaded bundles: '{assetPath}'.");
+            return false;
+        }
+
         private static void LoadConfigs()
         {
             string ID = NAME.Replace(" ", "");
+
+            bool configRequestedCustomFont = false;
             if (API.Config.TryGet(ID, "Font", "useKoreanCustomFont", out bool value))
             {
-                useKoreanCustomFont = value;
+                configRequestedCustomFont = value;
             }
             else
             {
-                API.Config.Set(ID, "Font", "useKoreanCustomFont", useKoreanCustomFont);
+                API.Config.Set(ID, "Font", "useKoreanCustomFont", false);
+            }
+
+            useKoreanCustomFont = configRequestedCustomFont && ENABLE_KOREAN_CUSTOM_FONT_OVERRIDE;
+            if (configRequestedCustomFont && !useKoreanCustomFont)
+            {
+                Log("Korean custom font override was requested in config, but is currently disabled for startup stability.");
             }
         }
 
