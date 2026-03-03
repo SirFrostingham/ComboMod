@@ -53,7 +53,8 @@ public partial class DoorSwitchSystem : PugSimulationSystemBase
     {
         if (Manager.main.player == null) return;
 
-        var distanceToTriggerLocal = 0.95;
+        const float triggerDistance = 1.5f;
+        var triggerDistanceSq = triggerDistance * triggerDistance;
 
         var playerPosition = Manager.main.player.WorldPosition;
 
@@ -67,7 +68,7 @@ public partial class DoorSwitchSystem : PugSimulationSystemBase
             {
                 if (ghostInstance.ghostType < 0) return;
                 var distance = math.distancesq(translation.Position, playerPosition);
-                var playerNearby = distance <= distanceToTriggerLocal;
+                var playerNearby = distance <= triggerDistanceSq;
 
                 var isPredicted = SystemAPI.HasComponent<PredictedGhost>(entity);
 
@@ -129,7 +130,8 @@ public partial class DoorGateStateChecker : PugSimulationSystemBase
 
     protected override void OnUpdate()
     {
-        var distanceToTriggerLocal = 0.95;
+        const float triggerDistance = 1.5f;
+        var triggerDistanceSq = triggerDistance * triggerDistance;
 
         // get and store player positions
         var playerPositions = new NativeList<float3>(World.UpdateAllocator.ToAllocator);
@@ -148,10 +150,9 @@ public partial class DoorGateStateChecker : PugSimulationSystemBase
                 foreach (var playerPos in playerPositions)
                 {
                     var distance = math.distancesq(translation.Position, playerPos);
-                    if (distance > distanceToTriggerLocal) continue;
+                    if (distance > triggerDistanceSq) continue;
                     anyPlayerNearby = true;
-                    //break;
-                    Debug.Log($"Gate/Door ({objectData.objectID}) distance to player is {distance} and variation is {objectData.variation}");
+                    break;
                 }
 
                 SetOpen(ref objectData, anyPlayerNearby);

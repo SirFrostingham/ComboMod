@@ -21,7 +21,6 @@ namespace InstantPortalCharge
                 .WithName("PortalCharge")
                 .WithBurst()
                 .WithAll<PortalCD>()
-                .WithNone<WayPointCD>()
                 .WithNone<EntityDestroyedCD>()
                 .WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities)
                 .Schedule();
