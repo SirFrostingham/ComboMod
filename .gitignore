@@ -1,0 +1,15 @@
+# Credentials — never commit
+secrets.ps1
+
+# Tools
+tools/
+
+# Build artifacts
+_staged/
+inspect*.txt
+*.zip
+ComboMod.zip
+ComboMod.sln
+deploy.version.txt
+dev_game_paths_info.txt
+autodoor_type_scan.txt

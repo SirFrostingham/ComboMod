@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using PugMod;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,7 +9,7 @@ using UnityEngine;
 public class AutoDoorMod : IMod
 {
     public const string MOD_NAME = "AutoDoors";
-    public const string MOD_VERSION = "1.1.4";
+    public const string MOD_VERSION = "1.1.5";
     private LoadedMod _modInfo;
     public void EarlyInit()
     {
@@ -41,8 +39,13 @@ public class AutoDoorMod : IMod
     }
 }
 
+[UpdateInGroup(typeof(SimulationSystemGroup))]
+[WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
 public partial class DoorSwitchSystem : PugSimulationSystemBase
 {
+    private const float TriggerDistance = 1.5f;
+    private const float TriggerDistanceSq = TriggerDistance * TriggerDistance;
+
     protected override void OnCreate()
     {
         base.OnCreate();
@@ -51,24 +54,25 @@ public partial class DoorSwitchSystem : PugSimulationSystemBase
 
     protected override void OnUpdate()
     {
-        if (Manager.main.player == null) return;
-
-        const float triggerDistance = 1.5f;
-        var triggerDistanceSq = triggerDistance * triggerDistance;
+        if (Manager.main.player == null)
+        {
+            base.OnUpdate();
+            return;
+        }
 
         var playerPosition = Manager.main.player.WorldPosition;
-
         var switchingQueues = SystemAPI.GetSingletonRW<GhostPredictionSwitchingQueues>().ValueRW;
 
-        Entities.WithAll<DoorCD>().ForEach((
-                Entity entity,
-                ref ObjectDataCD objectData,
-                in LocalTransform translation,
-                in GhostInstance ghostInstance) =>
+        Entities
+            .WithAll<GhostInstance>()
+            .WithAny<DoorCD, GateCD>()
+            .WithNone<SwitchPredictionSmoothing, EntityDestroyedCD>()
+            .ForEach((Entity entity, in LocalTransform translation, in GhostInstance ghostInstance) =>
             {
                 if (ghostInstance.ghostType < 0) return;
+
                 var distance = math.distancesq(translation.Position, playerPosition);
-                var playerNearby = distance <= triggerDistanceSq;
+                var playerNearby = distance <= TriggerDistanceSq;
 
                 var isPredicted = SystemAPI.HasComponent<PredictedGhost>(entity);
 
@@ -89,12 +93,10 @@ public partial class DoorSwitchSystem : PugSimulationSystemBase
                         TargetEntity = entity,
                         TransitionDurationSeconds = 1f,
                     });
-                    return;
                 }
             })
-            .WithNone<SwitchPredictionSmoothing>()
             .WithoutBurst()
-            .Schedule();
+            .Run();
 
         base.OnUpdate();
     }
@@ -104,9 +106,11 @@ public partial class DoorSwitchSystem : PugSimulationSystemBase
 [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
 public partial class DoorGateStateChecker : PugSimulationSystemBase
 {
+    private const float TriggerDistance = 1.5f;
+    private const float TriggerDistanceSq = TriggerDistance * TriggerDistance;
+
     static void SetOpen(ref ObjectDataCD objectData, bool open)
     {
-        // if we should open the door
         if (open)
         {
             objectData.variation = objectData.variation switch
@@ -116,7 +120,6 @@ public partial class DoorGateStateChecker : PugSimulationSystemBase
                 _ => objectData.variation
             };
         }
-        // if we should close the door
         else
         {
             objectData.variation = objectData.variation switch
@@ -130,27 +133,27 @@ public partial class DoorGateStateChecker : PugSimulationSystemBase
 
     protected override void OnUpdate()
     {
-        const float triggerDistance = 1.5f;
-        var triggerDistanceSq = triggerDistance * triggerDistance;
+        var playerPositions = new NativeList<float3>(Allocator.Temp);
 
-        // get and store player positions
-        var playerPositions = new NativeList<float3>(World.UpdateAllocator.ToAllocator);
         Entities
-            .WithAll<PlayerGhost>().ForEach((in LocalTransform translation) =>
+            .WithAll<PlayerGhost>()
+            .ForEach((in LocalTransform translation) =>
             {
                 playerPositions.Add(translation.Position);
             })
-            .Schedule();
+            .Run();
 
         Entities
-            .WithAll<PredictedGhost, Simulate, DoorCD>()
+            .WithAll<PredictedGhost, Simulate>()
+            .WithAny<DoorCD, GateCD>()
+            .WithNone<EntityDestroyedCD>()
             .ForEach((ref ObjectDataCD objectData, in LocalTransform translation) =>
             {
                 var anyPlayerNearby = false;
                 foreach (var playerPos in playerPositions)
                 {
                     var distance = math.distancesq(translation.Position, playerPos);
-                    if (distance > triggerDistanceSq) continue;
+                    if (distance > TriggerDistanceSq) continue;
                     anyPlayerNearby = true;
                     break;
                 }
@@ -158,8 +161,9 @@ public partial class DoorGateStateChecker : PugSimulationSystemBase
                 SetOpen(ref objectData, anyPlayerNearby);
             })
             .WithoutBurst()
-            .WithDisposeOnCompletion(playerPositions)
-            .Schedule();
+            .Run();
+
+        playerPositions.Dispose();
 
         base.OnUpdate();
     }
