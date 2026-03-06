@@ -9,7 +9,7 @@ $ModName    = "ComboMod"
 $ModsDir    = "$env:USERPROFILE\AppData\LocalLow\Pugstorm\Core Keeper\Steam\10717115\mods"
 $Dest       = "$ModsDir\$ModName"
 $Source     = $PSScriptRoot   # the folder containing this script
-$ZipOut     = "$Source\$ModName.zip"
+$ComboZipOut = "$Source\$ModName.zip"
 
 # mod.io config — credentials live in secrets.ps1 (git-ignored)
 # Copy secrets.example.ps1 -> secrets.ps1 and fill in your values.
@@ -21,6 +21,106 @@ if (-not (Test-Path $secretsFile)) {
 . $secretsFile
 $ModioGameId  = 5289
 $ModioModId   = 5824265
+
+# Individual mod.io IDs (placeholder values until each standalone mod exists)
+$ModioModIdAllSkillPerks      = "5842927"
+$ModioModIdAutoDoors          = "5842881"
+$ModioModIdBetterTextInput    = "5842929"
+$ModioModIdExperienceTweaks   = "5842930"
+$ModioModIdInfiniteOreBoulder = "5842933"
+$ModioModIdInstantPortalCharge= "5842935"
+$ModioModIdKeepInventory      = "5842937"
+$ModioModIdMoreMapReveal      = "5842940"
+$ModioModIdQuickUnlock        = "5842942"
+$ModioModIdSolariteShovel     = "5842943"
+
+$IndividualMods = @(
+    [PSCustomObject]@{ Name = "All Skill Perks"; RelativePath = "ModsToFix\\All Skill Perks";                                 ZipName = "AllSkillPerks.zip";      ModId = $ModioModIdAllSkillPerks },
+    [PSCustomObject]@{ Name = "AutoDoors";       RelativePath = "ModsToFix\\AutoDoors";                                       ZipName = "AutoDoors.zip";          ModId = $ModioModIdAutoDoors },
+    [PSCustomObject]@{ Name = "Better Text Input";RelativePath = "ModsToFix\\Better Text Input";                              ZipName = "BetterTextInput.zip";    ModId = $ModioModIdBetterTextInput },
+    [PSCustomObject]@{ Name = "Experience Tweaks";RelativePath = "ModsToFix\\Experience Tweaks";                              ZipName = "ExperienceTweaks.zip";   ModId = $ModioModIdExperienceTweaks },
+    [PSCustomObject]@{ Name = "InfiniteOreBoulder";RelativePath = "ModsToFix\\InfiniteOreBoulder";                            ZipName = "InfiniteOreBoulder.zip"; ModId = $ModioModIdInfiniteOreBoulder },
+    [PSCustomObject]@{ Name = "InstantPortalCharge";RelativePath = "ModsToFix\\InstantPortalCharge";                          ZipName = "InstantPortalCharge.zip";ModId = $ModioModIdInstantPortalCharge },
+    [PSCustomObject]@{ Name = "Keep inventory on death (for dedicated Servers)"; RelativePath = "ModsToFix\\Keep inventory on death (for dedicated Servers)"; ZipName = "KeepInventoryOnDeath.zip"; ModId = $ModioModIdKeepInventory },
+    [PSCustomObject]@{ Name = "More Map Reveal"; RelativePath = "ModsToFix\\More Map Reveal";                                 ZipName = "MoreMapReveal.zip";      ModId = $ModioModIdMoreMapReveal },
+    [PSCustomObject]@{ Name = "Quick Unlock";    RelativePath = "ModsToFix\\Quick Unlock";                                    ZipName = "QuickUnlock.zip";        ModId = $ModioModIdQuickUnlock },
+    [PSCustomObject]@{ Name = "Solarite Shovel"; RelativePath = "ModsToFix\\Solarite Shovel";                                 ZipName = "SolariteShovel.zip";     ModId = $ModioModIdSolariteShovel }
+)
+
+if ($IndividualMods.Count -ne 10) {
+    throw "Expected 10 individual mod package definitions, found $($IndividualMods.Count)."
+}
+
+function Invoke-ModioUpload {
+    param(
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][string]$ModId,
+        [Parameter(Mandatory = $true)][string]$ZipPath,
+        [Parameter(Mandatory = $true)][string]$Version,
+        [Parameter(Mandatory = $true)][string]$Changelog,
+        [Parameter(Mandatory = $true)][string]$GameId,
+        [Parameter(Mandatory = $true)][string]$OAuthToken
+    )
+
+    if (-not (Test-Path $ZipPath)) {
+        Write-Warning "[$Label] Cannot upload missing zip: $ZipPath"
+        return
+    }
+
+    Write-Host "[$Label] Publishing v$Version to mod.io (mod id: $ModId)..."
+
+    $client = $null
+    $multipart = $null
+    $fileStream = $null
+
+    try {
+        Add-Type -AssemblyName System.Net.Http
+
+        # File uploads require OAuth2 Bearer token (API keys are read-only).
+        $uri = "https://api.mod.io/v1/games/$GameId/mods/$ModId/files"
+
+        $client = New-Object System.Net.Http.HttpClient
+        $client.DefaultRequestHeaders.Authorization =
+            New-Object System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", $OAuthToken)
+
+        $multipart = New-Object System.Net.Http.MultipartFormDataContent
+
+        # Attach zip
+        $fileStream = [System.IO.File]::OpenRead($ZipPath)
+        $fileContent = New-Object System.Net.Http.StreamContent($fileStream)
+        $fileContent.Headers.ContentType =
+            [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("application/zip")
+        $multipart.Add($fileContent, "filedata", [System.IO.Path]::GetFileName($ZipPath))
+
+        # Other fields
+        $multipart.Add([System.Net.Http.StringContent]::new($Version),  "version")
+        $multipart.Add([System.Net.Http.StringContent]::new($Changelog), "changelog")
+        $multipart.Add([System.Net.Http.StringContent]::new("1"),       "active")
+
+        $res  = $client.PostAsync($uri, $multipart).Result
+        $body = $res.Content.ReadAsStringAsync().Result
+
+        if ($res.IsSuccessStatusCode) {
+            $json = $body | ConvertFrom-Json
+            $uploadedVersion = [string]$json.version
+            Write-Host "[$Label] mod.io upload OK - file id: $($json.id), version: $uploadedVersion"
+            if ($uploadedVersion -ne $Version) {
+                Write-Warning "[$Label] Requested upload version '$Version' but mod.io reported '$uploadedVersion'."
+            }
+        }
+        else {
+            Write-Warning "[$Label] mod.io upload failed (HTTP $([int]$res.StatusCode)): $body"
+        }
+    }
+    catch {
+        Write-Warning "[$Label] mod.io upload FAILED: $($_.Exception.Message)"
+    }
+    finally {
+        if ($fileStream) { $fileStream.Dispose() }
+        if ($multipart) { $multipart.Dispose() }
+        if ($client) { $client.Dispose() }
+    }
+}
 
 # ---- 1. Read + bump deploy version ----------------------------
 # ComboMod is a pack of many files (no single ComboMod.cs), so keep deploy
@@ -179,79 +279,103 @@ if (-not $clearedAnyCache) {
     Write-Host "[ComboMod] No matching compile cache folders found (clean slate)."
 }
 
-# ---- 3. Create distributable zip ----------------------------
-# Use "$Staged\*" (not $Staged) so the zip root contains ModManifest.json + Scripts/
-# directly, without a ComboMod\ wrapper folder. mod.io places the zip contents
-# into the mod folder automatically, so the extra wrapper causes double-nesting.
-# Write to a temp file first, then replace — avoids lock failures when VS Code
-# or Explorer has the previous zip open.
+# ---- 3. Create distributable zips ---------------------------
+# ComboMod zip: use "$Staged\*" (not $Staged) so the zip root contains
+# ModManifest.json + Scripts/ directly, without a ComboMod\ wrapper folder.
 $ZipTmp = "$Source\_ComboMod_new.zip"
 if (Test-Path $ZipTmp) { Remove-Item $ZipTmp -Force }
 Compress-Archive -Path "$Staged\*" -DestinationPath $ZipTmp -Force
 if (-not (Test-Path $ZipTmp)) { throw "Zip was not created: $ZipTmp" }
-if (Test-Path $ZipOut) { Remove-Item $ZipOut -Force -ErrorAction SilentlyContinue }
-Move-Item $ZipTmp $ZipOut -Force
-$zipSize = (Get-Item $ZipOut).Length
-Write-Host "[ComboMod] Zip created: $ZipOut ($zipSize bytes, $(Get-Date -Format 'HH:mm:ss'))"
+if (Test-Path $ComboZipOut) { Remove-Item $ComboZipOut -Force -ErrorAction SilentlyContinue }
+Move-Item $ZipTmp $ComboZipOut -Force
+$zipSize = (Get-Item $ComboZipOut).Length
+Write-Host "[ComboMod] Zip created: $ComboZipOut ($zipSize bytes, $(Get-Date -Format 'HH:mm:ss'))"
+
+# Individual mod zips:
+# Create each zip FROM inside its own mod directory so the zip root starts
+# with that mod's files/folders, then move the finished zip to project root.
+$CreatedIndividualZips = @()
+foreach ($mod in $IndividualMods) {
+    $modDir = Join-Path $Source $mod.RelativePath
+    if (-not (Test-Path $modDir)) {
+        throw "[$($mod.Name)] Missing mod directory: $modDir"
+    }
+
+    $modZipOut = Join-Path $Source $mod.ZipName
+    $modZipTmp = Join-Path $modDir ("_$([System.IO.Path]::GetFileNameWithoutExtension($mod.ZipName))_new.zip")
+
+    if (Test-Path $modZipTmp) { Remove-Item $modZipTmp -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $modZipOut) { Remove-Item $modZipOut -Force -ErrorAction SilentlyContinue }
+
+    Push-Location $modDir
+    try {
+        Compress-Archive -Path "*" -DestinationPath $modZipTmp -Force
+    }
+    finally {
+        Pop-Location
+    }
+
+    if (-not (Test-Path $modZipTmp)) {
+        throw "[$($mod.Name)] Zip was not created: $modZipTmp"
+    }
+
+    Move-Item $modZipTmp $modZipOut -Force
+    $indZipSize = (Get-Item $modZipOut).Length
+    Write-Host "[$($mod.Name)] Zip created from mod dir: $modZipOut ($indZipSize bytes, $(Get-Date -Format 'HH:mm:ss'))"
+
+    $CreatedIndividualZips += [PSCustomObject]@{
+        Name    = $mod.Name
+        ModId   = [string]$mod.ModId
+        ZipPath = $modZipOut
+    }
+}
+
+if ($CreatedIndividualZips.Count -ne 10) {
+    throw "Expected 10 individual mod zips, created $($CreatedIndividualZips.Count)."
+}
 
 # ---- 4. Publish to mod.io ----------------------------------
 $modVersion = $newVersion
 $changelog  = "Auto-deployed v$modVersion via deploy.ps1"
 
 if (-not $ModioOAuthToken) {
-    Write-Warning "[ComboMod] Skipping mod.io publish -- set ModioOAuthToken in secrets.ps1."
-    Write-Warning "           Get a token at: https://mod.io/me/access  (OAuth 2 Access -> Generate Token)"
-} else {
-Write-Host "[ComboMod] Publishing v$modVersion to mod.io..."
-try {
-    Add-Type -AssemblyName System.Net.Http
+    Write-Warning "[mod.io] Skipping publish -- set ModioOAuthToken in secrets.ps1."
+    Write-Warning "         Get a token at: https://mod.io/me/access  (OAuth 2 Access -> Generate Token)"
+}
+else {
+    # Upload ComboMod
+    $comboUploadParams = @{
+        Label      = "ComboMod"
+        ModId      = [string]$ModioModId
+        ZipPath    = $ComboZipOut
+        Version    = $modVersion
+        Changelog  = $changelog
+        GameId     = [string]$ModioGameId
+        OAuthToken = $ModioOAuthToken
+    }
+    Invoke-ModioUpload @comboUploadParams
 
-    # File uploads require OAuth2 Bearer token (API keys are read-only).
-    $uri    = "https://api.mod.io/v1/games/$ModioGameId/mods/$ModioModId/files"
-    $client = New-Object System.Net.Http.HttpClient
-    $client.DefaultRequestHeaders.Authorization =
-        New-Object System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", $ModioOAuthToken)
-
-    $multipart = New-Object System.Net.Http.MultipartFormDataContent
-
-    # Attach zip
-    $fileStream   = [System.IO.File]::OpenRead($ZipOut)
-    $fileContent  = New-Object System.Net.Http.StreamContent($fileStream)
-    $fileContent.Headers.ContentType =
-        [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("application/zip")
-    $multipart.Add($fileContent, "filedata", [System.IO.Path]::GetFileName($ZipOut))
-
-    # Other fields
-    $multipart.Add([System.Net.Http.StringContent]::new($modVersion), "version")
-    $multipart.Add([System.Net.Http.StringContent]::new($changelog),  "changelog")
-    $multipart.Add([System.Net.Http.StringContent]::new("1"),          "active")
-
-    $res     = $client.PostAsync($uri, $multipart).Result
-    $body    = $res.Content.ReadAsStringAsync().Result
-    $fileStream.Close()
-
-    if ($res.IsSuccessStatusCode) {
-        $json = $body | ConvertFrom-Json
-        $uploadedVersion = [string]$json.version
-        Write-Host "[ComboMod] mod.io upload OK - file id: $($json.id), version: $uploadedVersion"
-        if ($uploadedVersion -ne $modVersion) {
-            Write-Warning "[ComboMod] Requested upload version '$modVersion' but mod.io reported '$uploadedVersion'."
-            Write-Warning "           This usually indicates remote version reuse/normalization."
-            Write-Warning "           Build metadata is now embedded per deploy to keep artifacts unique."
+    # Upload all 10 individual mods (currently expected to fail until real IDs are set)
+    foreach ($modUpload in $CreatedIndividualZips) {
+        $modUploadParams = @{
+            Label      = $modUpload.Name
+            ModId      = $modUpload.ModId
+            ZipPath    = $modUpload.ZipPath
+            Version    = $modVersion
+            Changelog  = "Auto-deployed v$modVersion via deploy.ps1 ($($modUpload.Name))"
+            GameId     = [string]$ModioGameId
+            OAuthToken = $ModioOAuthToken
         }
-    } else {
-        Write-Warning "[ComboMod] mod.io upload failed (HTTP $([int]$res.StatusCode)): $body"
+        Invoke-ModioUpload @modUploadParams
     }
 }
-catch {
-    Write-Warning "[ComboMod] mod.io upload FAILED: $($_.Exception.Message)"
-}
-} # end if $ModioOAuthToken
 
 # ---- 5. Cleanup staged folder --------------------------------
 Remove-Item "$Source\_staged" -Recurse -Force
 
 Write-Host ""
 Write-Host "Done!"
-Write-Host "  Local install : $Dest"
-Write-Host "  mod.io page   : https://mod.io/g/corekeeper/m/combomod"
+Write-Host "  Local install        : $Dest"
+Write-Host "  Combo zip            : $ComboZipOut"
+Write-Host "  Individual zip count : $($CreatedIndividualZips.Count)"
+Write-Host "  mod.io page          : https://mod.io/g/corekeeper/m/combomod"
