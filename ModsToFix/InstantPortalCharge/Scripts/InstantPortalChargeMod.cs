@@ -1,13 +1,12 @@
 ﻿using System.Linq;
 using PugMod;
-using Unity.Burst;
 using UnityEngine;
 
 namespace InstantPortalCharge
 {
     public class InstantPortalChargeMod : IMod
     {
-        public const string VERSION = "1.4.4";
+        public const string VERSION = "1.4.5";
         public const string NAME = "Instant Portal Charge";
         private LoadedMod modInfo;
         
@@ -21,11 +20,6 @@ namespace InstantPortalCharge
                 return;
             }
 
-            if (Application.platform == RuntimePlatform.WindowsPlayer)
-            {
-                string directory = API.ModLoader.GetDirectory(modInfo.ModId);
-                BurstRuntime.LoadAdditionalLibrary($"{directory}/{NAME.Replace(" ", "")}_burst_generated.dll");
-            }
             Debug.Log($"[{NAME}]: Mod loaded successfully");
         }
         

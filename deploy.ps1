@@ -116,6 +116,34 @@ New-Item -ItemType Directory -Path $Dest -Force | Out-Null
 Copy-Item "$Staged\*" $Dest -Recurse -Force
 Write-Host "[ComboMod] Installed to: $Dest"
 
+# Move duplicate local installs that share the same manifest/mod name out of
+# the active mods directory.
+# Example problematic folder: "ComboMod (10 mods WORKING!)".
+# Having multiple folders with name "ComboMod" in ModManifest can cause stale
+# scripts to be compiled/loaded unexpectedly.
+$destLower = $Dest.ToLowerInvariant()
+$duplicateInstalls = Get-ChildItem -Path $ModsDir -Directory |
+    Where-Object {
+        $_.Name -like "$ModName*" -and $_.FullName.ToLowerInvariant() -ne $destLower
+    }
+
+$DisabledModsDir = "$ModsDir`_disabled"
+if (-not (Test-Path $DisabledModsDir)) {
+    New-Item -ItemType Directory -Path $DisabledModsDir -Force | Out-Null
+}
+
+foreach ($dup in $duplicateInstalls) {
+    $disabledName = $dup.Name
+    $disabledPath = Join-Path $DisabledModsDir $disabledName
+    if (Test-Path $disabledPath) {
+        $disabledName = "$($dup.Name)_$(Get-Date -Format 'yyyyMMddHHmmss')"
+        $disabledPath = Join-Path $DisabledModsDir $disabledName
+    }
+
+    Move-Item -LiteralPath $dup.FullName -Destination $disabledPath -Force
+    Write-Host "[ComboMod] Moved duplicate install out of active mods: $($dup.Name) -> $disabledPath"
+}
+
 # ---- 2b. Delete compiled mod caches -------------------------
 # The game caches compiled scripts under LocalAppData\Temp\...\ModLoader.
 # If stale cache folders remain from previous standalone installs (or older

@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using Unity.Collections;
+using Unity.Entities;
 using Unity.NetCode;
 
 namespace InstantPortalCharge
@@ -9,38 +10,31 @@ namespace InstantPortalCharge
     {
         protected override void OnUpdate()
         {
-            Entities.ForEach((
-                    ref ObjectDataCD objectDataCd
-                ) =>
-                {
-                    if (objectDataCd.amount < 1200)
-                    {
-                        objectDataCd.amount = 1200;
-                    }
-                })
-                .WithName("PortalCharge")
-                .WithBurst()
-                .WithAll<PortalCD>()
-                .WithNone<EntityDestroyedCD>()
-                .WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities)
-                .Schedule();
+            using var waypointQuery = SystemAPI.QueryBuilder()
+                .WithAllRW<ObjectDataCD>()
+                .WithAll<WayPointCD, DistanceToPlayerCD>()
+                .WithNone<EntityDestroyedCD, PortalCD>()
+                .Build();
 
-            Entities.ForEach((
-                    ref ObjectDataCD objectDataCd,
-                    in WayPointCD wayPoint,
-                    in DistanceToPlayerCD distance
-                ) =>
+            using (var waypointEntities = waypointQuery.ToEntityArray(Allocator.Temp))
+            using (var waypointObjectData = waypointQuery.ToComponentDataArray<ObjectDataCD>(Allocator.Temp))
+            using (var waypointData = waypointQuery.ToComponentDataArray<WayPointCD>(Allocator.Temp))
+            using (var waypointDistance = waypointQuery.ToComponentDataArray<DistanceToPlayerCD>(Allocator.Temp))
+            {
+                for (var i = 0; i < waypointEntities.Length; i++)
                 {
-                    if (objectDataCd.amount >= 600) return;
-                    
-                    float minDis = distance.minDistanceSq;
-                    if (!(minDis > 0) || !(minDis <= wayPoint.distanceToActivateSQ)) return;
-                    
+                    var objectDataCd = waypointObjectData[i];
+                    if (objectDataCd.amount >= 600) continue;
+
+                    var wayPoint = waypointData[i];
+                    var distance = waypointDistance[i];
+                    var minDis = distance.minDistanceSq;
+                    if (!(minDis > 0) || !(minDis <= wayPoint.distanceToActivateSQ)) continue;
+
                     objectDataCd.amount = 600;
-                })
-                .WithName("WayPointCharge")
-                .WithBurst()
-                .Schedule();
+                    EntityManager.SetComponentData(waypointEntities[i], objectDataCd);
+                }
+            }
 
             base.OnUpdate();
         }
