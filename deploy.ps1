@@ -24,7 +24,7 @@ $ModioModId   = 5824265
 
 # Individual mod.io IDs (placeholder values until each standalone mod exists)
 $ModioModIdAllSkillPerks      = "5842927"
-$ModioModIdAutoDoors          = "5842881"
+# $ModioModIdAutoDoors          = "5842881"
 $ModioModIdBetterTextInput    = "5842929"
 $ModioModIdExperienceTweaks   = "5842930"
 $ModioModIdInfiniteOreBoulder = "5842933"
