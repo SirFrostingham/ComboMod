@@ -36,7 +36,7 @@ $ModioModIdSolariteShovel     = "5842943"
 
 $IndividualMods = @(
     [PSCustomObject]@{ Name = "All Skill Perks"; RelativePath = "ModsToFix\\All Skill Perks";                                 ZipName = "AllSkillPerks.zip";      ModId = $ModioModIdAllSkillPerks },
-    [PSCustomObject]@{ Name = "AutoDoors";       RelativePath = "ModsToFix\\AutoDoors";                                       ZipName = "AutoDoors.zip";          ModId = $ModioModIdAutoDoors },
+    # [PSCustomObject]@{ Name = "AutoDoors";       RelativePath = "ModsToFix\\AutoDoors";                                       ZipName = "AutoDoors.zip";          ModId = $ModioModIdAutoDoors },
     [PSCustomObject]@{ Name = "Better Text Input";RelativePath = "ModsToFix\\Better Text Input";                              ZipName = "BetterTextInput.zip";    ModId = $ModioModIdBetterTextInput },
     [PSCustomObject]@{ Name = "Experience Tweaks";RelativePath = "ModsToFix\\Experience Tweaks";                              ZipName = "ExperienceTweaks.zip";   ModId = $ModioModIdExperienceTweaks },
     [PSCustomObject]@{ Name = "InfiniteOreBoulder";RelativePath = "ModsToFix\\InfiniteOreBoulder";                            ZipName = "InfiniteOreBoulder.zip"; ModId = $ModioModIdInfiniteOreBoulder },
