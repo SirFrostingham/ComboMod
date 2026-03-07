@@ -24,7 +24,7 @@ $ModioModId   = 5824265
 
 # Individual mod.io IDs (placeholder values until each standalone mod exists)
 $ModioModIdAllSkillPerks      = "5842927"
-# $ModioModIdAutoDoors          = "5842881"
+$ModioModIdAutoDoors          = "5842881"
 $ModioModIdBetterTextInput    = "5842929"
 $ModioModIdExperienceTweaks   = "5842930"
 $ModioModIdInfiniteOreBoulder = "5842933"
@@ -36,7 +36,7 @@ $ModioModIdSolariteShovel     = "5842943"
 
 $IndividualMods = @(
     [PSCustomObject]@{ Name = "All Skill Perks"; RelativePath = "ModsToFix\\All Skill Perks";                                 ZipName = "AllSkillPerks.zip";      ModId = $ModioModIdAllSkillPerks },
-    # [PSCustomObject]@{ Name = "AutoDoors";       RelativePath = "ModsToFix\\AutoDoors";                                       ZipName = "AutoDoors.zip";          ModId = $ModioModIdAutoDoors },
+    [PSCustomObject]@{ Name = "AutoDoors";       RelativePath = "ModsToFix\\AutoDoors";                                       ZipName = "AutoDoors.zip";          ModId = $ModioModIdAutoDoors },
     [PSCustomObject]@{ Name = "Better Text Input";RelativePath = "ModsToFix\\Better Text Input";                              ZipName = "BetterTextInput.zip";    ModId = $ModioModIdBetterTextInput },
     [PSCustomObject]@{ Name = "Experience Tweaks";RelativePath = "ModsToFix\\Experience Tweaks";                              ZipName = "ExperienceTweaks.zip";   ModId = $ModioModIdExperienceTweaks },
     [PSCustomObject]@{ Name = "InfiniteOreBoulder";RelativePath = "ModsToFix\\InfiniteOreBoulder";                            ZipName = "InfiniteOreBoulder.zip"; ModId = $ModioModIdInfiniteOreBoulder },
