@@ -2,80 +2,157 @@ using PugMod;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
 
 public class AutoDoorMod : IMod
 {
     public const string MOD_NAME = "AutoDoors";
-    public const string MOD_VERSION = "1.1.9";
+    public const string MOD_VERSION = "1.1.11";
     private LoadedMod _modInfo;
+
     public void EarlyInit()
     {
         Debug.Log($"Loading mod {MOD_NAME} version {MOD_VERSION}...");
-
-        Debug.Log($"Finished loading mod {MOD_NAME} v{MOD_VERSION}");
+        Debug.Log($"Finished loading mod {MOD_NAME} {MOD_VERSION}");
     }
 
-    public void Init()
+    public void Init() { }
+    public void Shutdown() { }
+    public void ModObjectLoaded(Object obj) { }
+    public void Update() { }
+}
+
+[UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
+[WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.LocalSimulation)]
+public partial class DoorSwitchSystem : PugSimulationSystemBase
+{
+    private const float TriggerDistanceSq = 0.95f;
+    private EntityQuery _switchableDoorsQuery;
+    private EntityQuery _switchingQueuesQuery;
+
+    protected override void OnCreate()
     {
-        //throw new System.NotImplementedException();
+        base.OnCreate();
+
+        _switchableDoorsQuery = GetEntityQuery(new EntityQueryDesc
+        {
+            All = new[]
+            {
+                ComponentType.ReadWrite<ObjectDataCD>(),
+                ComponentType.ReadOnly<LocalTransform>(),
+                ComponentType.ReadOnly<GhostInstance>(),
+                ComponentType.ReadOnly<DoorCD>()
+            },
+            None = new[]
+            {
+                ComponentType.ReadOnly<SwitchPredictionSmoothing>()
+            }
+        });
+
+        _switchingQueuesQuery = GetEntityQuery(new EntityQueryDesc
+        {
+            All = new[]
+            {
+                ComponentType.ReadWrite<GhostPredictionSwitchingQueues>()
+            },
+            Options = EntityQueryOptions.IncludeSystems
+        });
+
+        RequireForUpdate(_switchableDoorsQuery);
+        RequireForUpdate(_switchingQueuesQuery);
     }
 
-    public void Shutdown()
+    protected override void OnUpdate()
     {
-        //throw new System.NotImplementedException();
-    }
+        if (Manager.main?.player == null)
+        {
+            base.OnUpdate();
+            return;
+        }
 
-    public void ModObjectLoaded(Object obj)
-    {
-        //throw new System.NotImplementedException();
-    }
+        var playerPosition = (float3)Manager.main.player.WorldPosition;
+        var switchingQueues = _switchingQueuesQuery.GetSingletonRW<GhostPredictionSwitchingQueues>().ValueRW;
 
-    public void Update()
-    {
-        //throw new System.NotImplementedException();
+        using var entities = _switchableDoorsQuery.ToEntityArray(Allocator.Temp);
+        using var transforms = _switchableDoorsQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+        using var ghostInstances = _switchableDoorsQuery.ToComponentDataArray<GhostInstance>(Allocator.Temp);
+
+        for (var i = 0; i < entities.Length; i++)
+        {
+            if (ghostInstances[i].ghostType < 0)
+                continue;
+
+            var playerNearby = math.distancesq(transforms[i].Position, playerPosition) <= TriggerDistanceSq;
+            var isPredicted = EntityManager.HasComponent<PredictedGhost>(entities[i]);
+
+            if (playerNearby && !isPredicted)
+            {
+                switchingQueues.ConvertToPredictedQueue.Enqueue(new ConvertPredictionEntry
+                {
+                    TargetEntity = entities[i],
+                    TransitionDurationSeconds = 1f,
+                });
+            }
+            else if (!playerNearby && isPredicted)
+            {
+                switchingQueues.ConvertToInterpolatedQueue.Enqueue(new ConvertPredictionEntry
+                {
+                    TargetEntity = entities[i],
+                    TransitionDurationSeconds = 1f,
+                });
+            }
+        }
+
+        base.OnUpdate();
     }
 }
 
 [UpdateInGroup(typeof(SimulationSystemGroup))]
-[WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
-public partial class DoorGateAutoOpenSystem : PugSimulationSystemBase
+[WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
+public partial class DoorGateStateChecker : PugSimulationSystemBase
 {
-    private const float TriggerDistance = 1.5f;
-    private const float TriggerDistanceSq = TriggerDistance * TriggerDistance;
+    private const float TriggerDistanceSq = 0.95f;
+    private EntityQuery _playerQuery;
     private EntityQuery _doorGateQuery;
 
     protected override void OnCreate()
     {
         base.OnCreate();
-        Debug.Log($"[{AutoDoorMod.MOD_NAME}] DoorGateAutoOpenSystem active (v{AutoDoorMod.MOD_VERSION})");
+        Debug.Log($"[{AutoDoorMod.MOD_NAME}] Auto door systems active (v{AutoDoorMod.MOD_VERSION})");
+
+        _playerQuery = GetEntityQuery(new EntityQueryDesc
+        {
+            All = new[]
+            {
+                ComponentType.ReadOnly<PlayerGhost>(),
+                ComponentType.ReadOnly<LocalTransform>()
+            }
+        });
 
         _doorGateQuery = GetEntityQuery(new EntityQueryDesc
         {
             All = new[]
             {
                 ComponentType.ReadWrite<ObjectDataCD>(),
-                ComponentType.ReadOnly<LocalTransform>()
+                ComponentType.ReadOnly<LocalTransform>(),
+                ComponentType.ReadOnly<PredictedGhost>(),
+                ComponentType.ReadOnly<Simulate>()
             },
             Any = new[]
             {
                 ComponentType.ReadOnly<DoorCD>(),
                 ComponentType.ReadOnly<GateCD>()
-            },
-            None = new[]
-            {
-                ComponentType.ReadOnly<EntityDestroyedCD>()
-            },
-            Options = EntityQueryOptions.IncludeDisabledEntities
+            }
         });
 
+        RequireForUpdate(_playerQuery);
         RequireForUpdate(_doorGateQuery);
     }
 
-    static void SetOpen(ref ObjectDataCD objectData, bool open)
+    private static void SetOpen(ref ObjectDataCD objectData, bool open)
     {
-        // Most door/gate variants use even=closed and odd=open pairings.
         var variation = objectData.variation;
         var isOpen = (variation & 1) == 1;
 
@@ -87,40 +164,30 @@ public partial class DoorGateAutoOpenSystem : PugSimulationSystemBase
 
     protected override void OnUpdate()
     {
-        var hasManagerPlayer = Manager.main != null && Manager.main.player != null;
-        float3 managerPlayerPosition = float3.zero;
-        if (hasManagerPlayer)
-        {
-            managerPlayerPosition = Manager.main.player.WorldPosition;
-        }
-
+        using var playerTransforms = _playerQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
         using var entities = _doorGateQuery.ToEntityArray(Allocator.Temp);
+        using var objectDatas = _doorGateQuery.ToComponentDataArray<ObjectDataCD>(Allocator.Temp);
         using var doorTransforms = _doorGateQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-        using var doorObjectDatas = _doorGateQuery.ToComponentDataArray<ObjectDataCD>(Allocator.Temp);
 
         for (var i = 0; i < entities.Length; i++)
         {
             var anyPlayerNearby = false;
 
-            if (EntityManager.HasComponent<DistanceToPlayerCD>(entities[i]))
+            for (var p = 0; p < playerTransforms.Length; p++)
             {
-                var distanceToPlayer = EntityManager.GetComponentData<DistanceToPlayerCD>(entities[i]).minDistanceSq;
-                anyPlayerNearby = distanceToPlayer > 0f && distanceToPlayer <= TriggerDistanceSq;
-            }
-            else if (hasManagerPlayer)
-            {
-                var distance = math.distancesq(doorTransforms[i].Position, managerPlayerPosition);
-                anyPlayerNearby = distance <= TriggerDistanceSq;
+                if (math.distancesq(doorTransforms[i].Position, playerTransforms[p].Position) <= TriggerDistanceSq)
+                {
+                    anyPlayerNearby = true;
+                    break;
+                }
             }
 
-            var objectData = doorObjectDatas[i];
+            var objectData = objectDatas[i];
             var oldVariation = objectData.variation;
             SetOpen(ref objectData, anyPlayerNearby);
 
             if (objectData.variation != oldVariation)
-            {
                 EntityManager.SetComponentData(entities[i], objectData);
-            }
         }
 
         base.OnUpdate();
