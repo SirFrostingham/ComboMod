@@ -12,7 +12,7 @@ Instead of installing and maintaining each small mod separately, `ComboMod` ship
    - Rebalances talent point gain for skill trees.
    - Updates pet talent points to scale with pet level.
 
-2. **AutoDoors**
+2. **AutoGatesAndDoors**
    - Automatically opens/closes doors and gates based on nearby players.
 
 3. **Better Text Input**

@@ -11,8 +11,7 @@
         { "path": "ModsToFix/All Skill Perks/Bundles/all-skill-perks_Windows.assetbundle" },
         { "path": "ModsToFix/All Skill Perks/Bundles/all-skill-perks_Linux.assetbundle" },
 
-        { "path": "ModsToFix/AutoDoors/Scripts/AutoDoorMod.cs" },
-        { "path": "ModsToFix/AutoDoors/Bundles/AutoDoor_Windows.assetbundle" },
+        { "path": "ModsToFix/AutoGatesAndDoors/Scripts/Mod.cs" },
 
         { "path": "ModsToFix/Better Text Input/Scripts/TextInputController.cs" },
         { "path": "ModsToFix/Better Text Input/Scripts/Patches/TextManager_Patch.cs" },

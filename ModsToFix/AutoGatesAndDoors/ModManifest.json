@@ -1,6 +1,6 @@
 {
     "guid": "e5682ee28739474792d8801d091fd88a",
-    "name": "AutoDoor",
+    "name": "AutoGatesAndDoors",
     "skipSafetyChecks": false,
     "disableScripts": false,
     "accessesExtraAssemblies": true,
@@ -8,10 +8,7 @@
     "requiredOn": 3,
     "files": [
         {
-            "path": "Scripts/AutoDoorMod.cs"
-        },
-        {
-            "path": "Bundles/AutoDoor_Windows.assetbundle"
+            "path": "Scripts/Mod.cs"
         }
     ],
     "dependencies": []

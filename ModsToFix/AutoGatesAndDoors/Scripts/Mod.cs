@@ -6,16 +6,23 @@ using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
 
-public class AutoDoorMod : IMod
+public class AutoGatesAndDoorsMod : IMod
 {
-    public const string MOD_NAME = "AutoDoors";
+    public const string MOD_NAME = "AutoGateAndDoors";
     public const string MOD_VERSION = "1.1.11";
     private LoadedMod _modInfo;
 
     public void EarlyInit()
     {
-        Debug.Log($"Loading mod {MOD_NAME} version {MOD_VERSION}...");
-        Debug.Log($"Finished loading mod {MOD_NAME} {MOD_VERSION}");
+        Debug.Log($"[{MOD_NAME}]: Mod version: {MOD_VERSION}");
+        modInfo = GetModInfo(this);
+        if (modInfo == null)
+        {
+            Debug.Log($"[{NAME}]: Failed to load {NAME}: mod metadata not found!");
+            return;
+        }
+
+        Debug.Log($"[{NAME}]: Mod loaded successfully");
     }
 
     public void Init() { }
@@ -26,7 +33,7 @@ public class AutoDoorMod : IMod
 
 [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
 [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.LocalSimulation)]
-public partial class DoorSwitchSystem : PugSimulationSystemBase
+public partial class ThresholdGhostRelay : PugSimulationSystemBase
 {
     private const float TriggerDistanceSq = 0.95f;
     private EntityQuery _switchableDoorsQuery;
@@ -111,7 +118,7 @@ public partial class DoorSwitchSystem : PugSimulationSystemBase
 
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
-public partial class DoorGateStateChecker : PugSimulationSystemBase
+public partial class ProximityLatchCoordinator : PugSimulationSystemBase
 {
     private const float TriggerDistanceSq = 0.95f;
     private EntityQuery _playerQuery;
@@ -120,7 +127,7 @@ public partial class DoorGateStateChecker : PugSimulationSystemBase
     protected override void OnCreate()
     {
         base.OnCreate();
-        Debug.Log($"[{AutoDoorMod.MOD_NAME}] Auto door systems active (v{AutoDoorMod.MOD_VERSION})");
+        Debug.Log($"[{AutoGatesAndDoorsMod.MOD_NAME}] AutoGatesAndDoors systems active (v{AutoGatesAndDoorsMod.MOD_VERSION})");
 
         _playerQuery = GetEntityQuery(new EntityQueryDesc
         {

@@ -24,7 +24,7 @@ $ModioModId   = 5824265
 
 # Individual mod.io IDs (placeholder values until each standalone mod exists)
 $ModioModIdAllSkillPerks      = "5842927"
-$ModioModIdAutoDoors          = "5842881"
+$ModioModIdAutoGatesAndDoors   = "5842881"
 $ModioModIdBetterTextInput    = "5842929"
 $ModioModIdExperienceTweaks   = "5842930"
 $ModioModIdInfiniteOreBoulder = "5842933"
@@ -36,7 +36,7 @@ $ModioModIdSolariteShovel     = "5842943"
 
 $IndividualMods = @(
     [PSCustomObject]@{ Name = "All Skill Perks"; RelativePath = "ModsToFix\\All Skill Perks";                                 ZipName = "AllSkillPerks.zip";      ModId = $ModioModIdAllSkillPerks },
-    [PSCustomObject]@{ Name = "AutoDoors";       RelativePath = "ModsToFix\\AutoDoors";                                       ZipName = "AutoDoors.zip";          ModId = $ModioModIdAutoDoors },
+    [PSCustomObject]@{ Name = "AutoGatesAndDoors";       RelativePath = "ModsToFix\\AutoGatesAndDoors";                                       ZipName = "AutoGatesAndDoors.zip";          ModId = $ModioModIdAutoGatesAndDoors },
     [PSCustomObject]@{ Name = "Better Text Input";RelativePath = "ModsToFix\\Better Text Input";                              ZipName = "BetterTextInput.zip";    ModId = $ModioModIdBetterTextInput },
     [PSCustomObject]@{ Name = "Experience Tweaks";RelativePath = "ModsToFix\\Experience Tweaks";                              ZipName = "ExperienceTweaks.zip";   ModId = $ModioModIdExperienceTweaks },
     [PSCustomObject]@{ Name = "InfiniteOreBoulder";RelativePath = "ModsToFix\\InfiniteOreBoulder";                            ZipName = "InfiniteOreBoulder.zip"; ModId = $ModioModIdInfiniteOreBoulder },
@@ -254,7 +254,7 @@ $CacheRoot = "$env:LOCALAPPDATA\Temp\Pugstorm\Core Keeper\ModLoader"
 $CacheTargets = @(
     $ModName,
     "all-skill-perks",
-    "AutoDoor",
+    "AutoGatesAndDoors",
     "BetterTextInput",
     "ExperienceTweaks",
     "InfiniteOreBoulder",
@@ -319,7 +319,8 @@ foreach ($mod in $IndividualMods) {
         throw "[$($mod.Name)] Zip was not created: $modZipTmp"
     }
 
-    Move-Item $modZipTmp $modZipOut -Force
+    [System.IO.File]::Copy($modZipTmp, $modZipOut, $true)
+    Remove-Item $modZipTmp -Force -ErrorAction SilentlyContinue
     $indZipSize = (Get-Item $modZipOut).Length
     Write-Host "[$($mod.Name)] Zip created from mod dir: $modZipOut ($indZipSize bytes, $(Get-Date -Format 'HH:mm:ss'))"
 
@@ -371,7 +372,9 @@ else {
 }
 
 # ---- 5. Cleanup staged folder --------------------------------
-Remove-Item "$Source\_staged" -Recurse -Force
+if (Test-Path $StagedRoot) {
+    Remove-Item $StagedRoot -Recurse -Force
+}
 
 Write-Host ""
 Write-Host "Done!"
