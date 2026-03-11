@@ -1,18 +1,20 @@
-{
-    "guid": "KeepInventoryOnDeath",
-    "name": "Keep Inventory On Death",
-    "version": "1.0.0",
-    "description": "Prevents dropping inventory items on death. The grave spawns but your items stay in your inventory.",
-    "author": "aSpeX26",
-    "skipSafetyChecks": false,
-    "disableScripts": false,
-    "accessesExtraAssemblies": true,
-    "disableHarmonyPatching": true,
-    "requiredOn": 3,
-    "files": [
-        {
-            "path": "Scripts/KeepInventorySystem.cs"
-        }
-    ],
-    "dependencies": []
+﻿{
+    "guid":  "KeepInventoryOnDeath",
+    "name":  "Keep Inventory On Death",
+    "description":  "Prevents dropping inventory items on death. The grave spawns but your items stay in your inventory.",
+    "author":  "aSpeX26",
+    "skipSafetyChecks":  false,
+    "disableScripts":  false,
+    "accessesExtraAssemblies":  true,
+    "disableHarmonyPatching":  true,
+    "requiredOn":  3,
+    "files":  [
+                  {
+                      "path":  "Scripts/KeepInventorySystem.cs"
+                  }
+              ],
+    "dependencies":  [
+
+                     ],
+    "version":  "0.0.51"
 }

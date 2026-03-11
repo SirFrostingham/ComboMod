@@ -1,21 +1,24 @@
-{
-    "guid": "a308662eeaa84a8991d4d606e996b863",
-    "name": "ExperienceTweaks",
-    "skipSafetyChecks": false,
-    "disableScripts": false,
-    "accessesExtraAssemblies": true,
-    "disableHarmonyPatching": false,
-    "requiredOn": 3,
-    "files": [
-        {
-            "path": "Scripts/ExperienceTweaks.cs"
-        },
-        {
-            "path": "Bundles/ExperienceTweaks_Windows.assetbundle"
-        },
-        {
-            "path": "Bundles/ExperienceTweaks_Linux.assetbundle"
-        }
-    ],
-    "dependencies": []
+﻿{
+    "guid":  "a308662eeaa84a8991d4d606e996b863",
+    "name":  "ExperienceTweaks",
+    "skipSafetyChecks":  false,
+    "disableScripts":  false,
+    "accessesExtraAssemblies":  true,
+    "disableHarmonyPatching":  false,
+    "requiredOn":  3,
+    "files":  [
+                  {
+                      "path":  "Scripts/ExperienceTweaks.cs"
+                  },
+                  {
+                      "path":  "Bundles/ExperienceTweaks_Windows.assetbundle"
+                  },
+                  {
+                      "path":  "Bundles/ExperienceTweaks_Linux.assetbundle"
+                  }
+              ],
+    "dependencies":  [
+
+                     ],
+    "version":  "0.0.51"
 }

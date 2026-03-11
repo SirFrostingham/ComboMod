@@ -1,18 +1,21 @@
-{
-    "guid": "4f78fc2ba7e44e4eb2f04aa511beefc3",
-    "name": "InstantPortalCharge",
-    "skipSafetyChecks": false,
-    "disableScripts": false,
-    "accessesExtraAssemblies": true,
-    "disableHarmonyPatching": false,
-    "requiredOn": 3,
-    "files": [
-        {
-            "path": "Scripts/PortalChargeSystem.cs"
-        },
-        {
-            "path": "Scripts/InstantPortalChargeMod.cs"
-        }
-    ],
-    "dependencies": []
+﻿{
+    "guid":  "4f78fc2ba7e44e4eb2f04aa511beefc3",
+    "name":  "InstantPortalCharge",
+    "skipSafetyChecks":  false,
+    "disableScripts":  false,
+    "accessesExtraAssemblies":  true,
+    "disableHarmonyPatching":  false,
+    "requiredOn":  3,
+    "files":  [
+                  {
+                      "path":  "Scripts/PortalChargeSystem.cs"
+                  },
+                  {
+                      "path":  "Scripts/InstantPortalChargeMod.cs"
+                  }
+              ],
+    "dependencies":  [
+
+                     ],
+    "version":  "0.0.51"
 }

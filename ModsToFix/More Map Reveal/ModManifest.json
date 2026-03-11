@@ -1,21 +1,24 @@
-{
-    "guid": "6e0cbc129a764a87b633c3885f5c5dae",
-    "name": "MoreMapReveal",
-    "skipSafetyChecks": false,
-    "disableScripts": false,
-    "accessesExtraAssemblies": true,
-    "disableHarmonyPatching": false,
-    "requiredOn": 3,
-    "files": [
-        {
-            "path": "Scripts/MoreMapReveal.cs"
-        },
-        {
-            "path": "Bundles/MoreMapReveal_Windows.assetbundle"
-        },
-        {
-            "path": "Bundles/MoreMapReveal_Linux.assetbundle"
-        }
-    ],
-    "dependencies": []
+﻿{
+    "guid":  "6e0cbc129a764a87b633c3885f5c5dae",
+    "name":  "MoreMapReveal",
+    "skipSafetyChecks":  false,
+    "disableScripts":  false,
+    "accessesExtraAssemblies":  true,
+    "disableHarmonyPatching":  false,
+    "requiredOn":  3,
+    "files":  [
+                  {
+                      "path":  "Scripts/MoreMapReveal.cs"
+                  },
+                  {
+                      "path":  "Bundles/MoreMapReveal_Windows.assetbundle"
+                  },
+                  {
+                      "path":  "Bundles/MoreMapReveal_Linux.assetbundle"
+                  }
+              ],
+    "dependencies":  [
+
+                     ],
+    "version":  "0.0.51"
 }

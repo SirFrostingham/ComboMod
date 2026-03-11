@@ -1,4 +1,6 @@
-using PugMod;
+﻿using PugMod;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,8 +11,8 @@ using UnityEngine;
 
 public class AutoGatesAndDoorsMod : IMod
 {
-    public const string MOD_NAME = "AutoGateAndDoors";
-    public const string MOD_VERSION = "1.1.11";
+    public const string MOD_NAME = "AutoGatesAndDoors";
+    public const string MOD_VERSION = "0.0.51";
     private LoadedMod _modInfo;
 
     public void EarlyInit()
@@ -33,8 +35,40 @@ public class AutoGatesAndDoorsMod : IMod
 
     public void Init() { }
     public void Shutdown() { }
-    public void ModObjectLoaded(Object obj) { }
+    public void ModObjectLoaded(UnityEngine.Object obj) { }
     public void Update() { }
+}
+
+internal static class AutoGateDoorFilters
+{
+    private static readonly HashSet<ObjectID> ExcludedAutoToggleObjectIds = BuildExcludedAutoToggleObjectIds();
+
+    private static HashSet<ObjectID> BuildExcludedAutoToggleObjectIds()
+    {
+        var excluded = new HashSet<ObjectID>();
+
+        foreach (ObjectID objectId in Enum.GetValues(typeof(ObjectID)))
+        {
+            if (objectId == ObjectID.None)
+                continue;
+
+            var name = objectId.ToString();
+            var isElectric = name.IndexOf("electric", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             name.IndexOf("electrical", StringComparison.OrdinalIgnoreCase) >= 0;
+            var isDoorOrGate = name.IndexOf("door", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                               name.IndexOf("gate", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (isElectric && isDoorOrGate)
+                excluded.Add(objectId);
+        }
+
+        return excluded;
+    }
+
+    public static bool ShouldSkipAutoToggle(ObjectDataCD objectData)
+    {
+        return ExcludedAutoToggleObjectIds.Contains(objectData.objectID);
+    }
 }
 
 [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
@@ -91,10 +125,14 @@ public partial class ThresholdGhostRelay : PugSimulationSystemBase
         using var entities = _switchableDoorsQuery.ToEntityArray(Allocator.Temp);
         using var transforms = _switchableDoorsQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
         using var ghostInstances = _switchableDoorsQuery.ToComponentDataArray<GhostInstance>(Allocator.Temp);
+        using var objectDatas = _switchableDoorsQuery.ToComponentDataArray<ObjectDataCD>(Allocator.Temp);
 
         for (var i = 0; i < entities.Length; i++)
         {
             if (ghostInstances[i].ghostType < 0)
+                continue;
+
+            if (AutoGateDoorFilters.ShouldSkipAutoToggle(objectDatas[i]))
                 continue;
 
             var playerNearby = math.distancesq(transforms[i].Position, playerPosition) <= TriggerDistanceSq;
@@ -128,7 +166,8 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
 {
     private const float TriggerDistanceSq = 0.95f;
     private EntityQuery _playerQuery;
-    private EntityQuery _doorGateQuery;
+    private EntityQuery _gateQuery;
+    private EntityQuery _nonElectricDoorQuery;
 
     protected override void OnCreate()
     {
@@ -144,7 +183,7 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
             }
         });
 
-        _doorGateQuery = GetEntityQuery(new EntityQueryDesc
+        _gateQuery = GetEntityQuery(new EntityQueryDesc
         {
             All = new[]
             {
@@ -155,13 +194,35 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
             },
             Any = new[]
             {
-                ComponentType.ReadOnly<DoorCD>(),
+                ComponentType.ReadOnly<GateCD>()
+            }
+        });
+
+        _nonElectricDoorQuery = GetEntityQuery(new EntityQueryDesc
+        {
+            All = new[]
+            {
+                ComponentType.ReadWrite<ObjectDataCD>(),
+                ComponentType.ReadOnly<LocalTransform>(),
+                ComponentType.ReadOnly<PredictedGhost>(),
+                ComponentType.ReadOnly<Simulate>(),
+                ComponentType.ReadOnly<DoorCD>()
+            },
+            None = new[]
+            {
                 ComponentType.ReadOnly<GateCD>()
             }
         });
 
         RequireForUpdate(_playerQuery);
-        RequireForUpdate(_doorGateQuery);
+        RequireForUpdate(GetEntityQuery(new EntityQueryDesc
+        {
+            Any = new[]
+            {
+                ComponentType.ReadOnly<GateCD>(),
+                ComponentType.ReadOnly<DoorCD>()
+            }
+        }));
     }
 
     private static void SetOpen(ref ObjectDataCD objectData, bool open)
@@ -178,21 +239,25 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
     protected override void OnUpdate()
     {
         using var playerTransforms = _playerQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-        using var entities = _doorGateQuery.ToEntityArray(Allocator.Temp);
-        using var objectDatas = _doorGateQuery.ToComponentDataArray<ObjectDataCD>(Allocator.Temp);
-        using var doorTransforms = _doorGateQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+        ApplyAutoToggle(_gateQuery, playerTransforms);
+        ApplyAutoToggle(_nonElectricDoorQuery, playerTransforms);
+
+        base.OnUpdate();
+    }
+
+    private void ApplyAutoToggle(EntityQuery query, NativeArray<LocalTransform> playerTransforms)
+    {
+        using var entities = query.ToEntityArray(Allocator.Temp);
+        using var objectDatas = query.ToComponentDataArray<ObjectDataCD>(Allocator.Temp);
+        using var transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
 
         for (var i = 0; i < entities.Length; i++)
         {
-            if (EntityManager.HasComponent<ElectricalDoor>(entities[i])
-                || EntityManager.HasComponent<ElectricalDropGate>(entities[i]))
-                continue;
-
             var anyPlayerNearby = false;
 
             for (var p = 0; p < playerTransforms.Length; p++)
             {
-                if (math.distancesq(doorTransforms[i].Position, playerTransforms[p].Position) <= TriggerDistanceSq)
+                if (math.distancesq(transforms[i].Position, playerTransforms[p].Position) <= TriggerDistanceSq)
                 {
                     anyPlayerNearby = true;
                     break;
@@ -200,13 +265,33 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
             }
 
             var objectData = objectDatas[i];
+            if (AutoGateDoorFilters.ShouldSkipAutoToggle(objectData))
+                continue;
+
             var oldVariation = objectData.variation;
             SetOpen(ref objectData, anyPlayerNearby);
 
             if (objectData.variation != oldVariation)
                 EntityManager.SetComponentData(entities[i], objectData);
         }
-
-        base.OnUpdate();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

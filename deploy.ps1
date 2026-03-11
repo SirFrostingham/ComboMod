@@ -103,9 +103,11 @@ function Invoke-ModioUpload {
         if ($res.IsSuccessStatusCode) {
             $json = $body | ConvertFrom-Json
             $uploadedVersion = [string]$json.version
-            Write-Host "[$Label] mod.io upload OK - file id: $($json.id), version: $uploadedVersion"
-            if ($uploadedVersion -ne $Version) {
-                Write-Warning "[$Label] Requested upload version '$Version' but mod.io reported '$uploadedVersion'."
+            if ([string]::IsNullOrWhiteSpace($uploadedVersion)) {
+                Write-Host "[$Label] mod.io upload OK - file id: $($json.id)"
+            }
+            else {
+                Write-Host "[$Label] mod.io upload OK - file id: $($json.id), version: $uploadedVersion"
             }
         }
         else {
@@ -119,6 +121,52 @@ function Invoke-ModioUpload {
         if ($fileStream) { $fileStream.Dispose() }
         if ($multipart) { $multipart.Dispose() }
         if ($client) { $client.Dispose() }
+    }
+}
+
+function Get-StampedManifestJson {
+    param(
+        [Parameter(Mandatory = $true)][string]$ManifestPath,
+        [Parameter(Mandatory = $true)][string]$Version
+    )
+
+    $manifestObject = Get-Content $ManifestPath -Raw | ConvertFrom-Json
+    $manifestObject | Add-Member -NotePropertyName version -NotePropertyValue $Version -Force
+    return ($manifestObject | ConvertTo-Json -Depth 100)
+}
+
+function Update-EmbeddedScriptVersion {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string]$Version,
+        [string]$ForcedName
+    )
+
+    if (-not (Test-Path $FilePath)) {
+        return
+    }
+
+    $content = Get-Content $FilePath -Raw
+    $updated = $content
+
+    if ($ForcedName) {
+        $updated = [regex]::Replace(
+            $updated,
+            'public\s+const\s+string\s+MOD_NAME\s*=\s*"[^"]*"\s*;',
+            ('public const string MOD_NAME = "{0}";' -f $ForcedName),
+            1
+        )
+    }
+
+    $updated = [regex]::Replace(
+        $updated,
+        'public\s+const\s+string\s+MOD_VERSION\s*=\s*"[^"]*"\s*;',
+        ('public const string MOD_VERSION = "{0}";' -f $Version),
+        1
+    )
+
+    if ($updated -ne $content) {
+        Set-Content -Path $FilePath -Value $updated -Encoding UTF8
     }
 }
 
@@ -303,6 +351,18 @@ foreach ($mod in $IndividualMods) {
 
     $modZipOut = Join-Path $Source $mod.ZipName
     $modZipTmp = Join-Path $modDir ("_$([System.IO.Path]::GetFileNameWithoutExtension($mod.ZipName))_new.zip")
+    $modManifestPath = Join-Path $modDir "ModManifest.json"
+
+    if (-not (Test-Path $modManifestPath)) {
+        throw "[$($mod.Name)] Missing ModManifest.json: $modManifestPath"
+    }
+
+    $updatedManifestJson = Get-StampedManifestJson -ManifestPath $modManifestPath -Version $newVersion
+    Set-Content -Path $modManifestPath -Value $updatedManifestJson -Encoding UTF8
+
+    if ($mod.Name -eq "AutoGatesAndDoors") {
+        Update-EmbeddedScriptVersion -FilePath (Join-Path $modDir "Scripts\Mod.cs") -Version $newVersion -ForcedName "AutoGatesAndDoors"
+    }
 
     if (Test-Path $modZipTmp) { Remove-Item $modZipTmp -Force -ErrorAction SilentlyContinue }
     if (Test-Path $modZipOut) { Remove-Item $modZipOut -Force -ErrorAction SilentlyContinue }

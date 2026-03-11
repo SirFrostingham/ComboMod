@@ -1,15 +1,18 @@
-{
-    "guid": "e5682ee28739474792d8801d091fd88a",
-    "name": "AutoGatesAndDoors",
-    "skipSafetyChecks": false,
-    "disableScripts": false,
-    "accessesExtraAssemblies": true,
-    "disableHarmonyPatching": false,
-    "requiredOn": 3,
-    "files": [
-        {
-            "path": "Scripts/Mod.cs"
-        }
-    ],
-    "dependencies": []
+﻿{
+    "guid":  "e5682ee28739474792d8801d091fd88a",
+    "name":  "AutoGatesAndDoors",
+    "skipSafetyChecks":  false,
+    "disableScripts":  false,
+    "accessesExtraAssemblies":  true,
+    "disableHarmonyPatching":  false,
+    "requiredOn":  3,
+    "files":  [
+                  {
+                      "path":  "Scripts/Mod.cs"
+                  }
+              ],
+    "dependencies":  [
+
+                     ],
+    "version":  "0.0.51"
 }

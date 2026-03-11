@@ -1,18 +1,21 @@
-{
-    "guid": "b074c5f9040141fab16fce19cf361a2b",
-    "name": "InfiniteOreBoulder",
-    "skipSafetyChecks": false,
-    "disableScripts": false,
-    "accessesExtraAssemblies": true,
-    "disableHarmonyPatching": false,
-    "requiredOn": 3,
-    "files": [
-        {
-            "path": "Scripts/InfiniteOreBoulderMod.cs"
-        },
-        {
-            "path": "Scripts/InfiniteBoulderSystem.cs"
-        }
-    ],
-    "dependencies": []
+﻿{
+    "guid":  "b074c5f9040141fab16fce19cf361a2b",
+    "name":  "InfiniteOreBoulder",
+    "skipSafetyChecks":  false,
+    "disableScripts":  false,
+    "accessesExtraAssemblies":  true,
+    "disableHarmonyPatching":  false,
+    "requiredOn":  3,
+    "files":  [
+                  {
+                      "path":  "Scripts/InfiniteOreBoulderMod.cs"
+                  },
+                  {
+                      "path":  "Scripts/InfiniteBoulderSystem.cs"
+                  }
+              ],
+    "dependencies":  [
+
+                     ],
+    "version":  "0.0.51"
 }
