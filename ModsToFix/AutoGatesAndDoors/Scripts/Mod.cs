@@ -127,6 +127,8 @@ public partial class ThresholdGhostRelay : PugSimulationSystemBase
 public partial class ProximityLatchCoordinator : PugSimulationSystemBase
 {
     private const float TriggerDistanceSq = 0.95f;
+    private static readonly FixedString64Bytes ElectricalDoorObjectType = "ElectricalDoor";
+    private static readonly FixedString64Bytes ElectricalDropGateObjectType = "ElectricalDropGate";
     private EntityQuery _playerQuery;
     private EntityQuery _doorGateQuery;
 
@@ -175,6 +177,12 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
             objectData.variation = variation - 1;
     }
 
+    private static bool IsElectricalDoorLike(in ObjectDataCD objectData)
+    {
+        return objectData.objectType == ElectricalDoorObjectType
+            || objectData.objectType == ElectricalDropGateObjectType;
+    }
+
     protected override void OnUpdate()
     {
         using var playerTransforms = _playerQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
@@ -184,6 +192,9 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
 
         for (var i = 0; i < entities.Length; i++)
         {
+            if (IsElectricalDoorLike(objectDatas[i]))
+                continue;
+
             var anyPlayerNearby = false;
 
             for (var p = 0; p < playerTransforms.Length; p++)
