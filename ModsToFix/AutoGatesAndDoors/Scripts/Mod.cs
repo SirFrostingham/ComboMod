@@ -44,13 +44,10 @@ public partial class ThresholdGhostRelay : PugSimulationSystemBase
     private const float TriggerDistanceSq = 0.95f;
     private EntityQuery _switchableDoorsQuery;
     private EntityQuery _switchingQueuesQuery;
-    private ComponentLookup<ActivatedByElectricityCD> _activatedByElectricityLookup;
 
     protected override void OnCreate()
     {
         base.OnCreate();
-
-        _activatedByElectricityLookup = GetComponentLookup<ActivatedByElectricityCD>(true);
 
         _switchableDoorsQuery = GetEntityQuery(new EntityQueryDesc
         {
@@ -88,8 +85,6 @@ public partial class ThresholdGhostRelay : PugSimulationSystemBase
             return;
         }
 
-        _activatedByElectricityLookup.Update(this);
-
         var playerPosition = (float3)Manager.main.player.WorldPosition;
         var switchingQueues = _switchingQueuesQuery.GetSingletonRW<GhostPredictionSwitchingQueues>().ValueRW;
 
@@ -99,9 +94,6 @@ public partial class ThresholdGhostRelay : PugSimulationSystemBase
 
         for (var i = 0; i < entities.Length; i++)
         {
-            if (_activatedByElectricityLookup.HasComponent(entities[i]))
-                continue;
-
             if (ghostInstances[i].ghostType < 0)
                 continue;
 
@@ -137,14 +129,11 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
     private const float TriggerDistanceSq = 0.95f;
     private EntityQuery _playerQuery;
     private EntityQuery _doorGateQuery;
-    private ComponentLookup<ActivatedByElectricityCD> _activatedByElectricityLookup;
 
     protected override void OnCreate()
     {
         base.OnCreate();
         Debug.Log($"[{AutoGatesAndDoorsMod.MOD_NAME}] AutoGatesAndDoors systems active (v{AutoGatesAndDoorsMod.MOD_VERSION})");
-
-        _activatedByElectricityLookup = GetComponentLookup<ActivatedByElectricityCD>(true);
 
         _playerQuery = GetEntityQuery(new EntityQueryDesc
         {
@@ -188,8 +177,6 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
 
     protected override void OnUpdate()
     {
-        _activatedByElectricityLookup.Update(this);
-
         using var playerTransforms = _playerQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
         using var entities = _doorGateQuery.ToEntityArray(Allocator.Temp);
         using var objectDatas = _doorGateQuery.ToComponentDataArray<ObjectDataCD>(Allocator.Temp);
@@ -197,7 +184,8 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
 
         for (var i = 0; i < entities.Length; i++)
         {
-            if (_activatedByElectricityLookup.HasComponent(entities[i]))
+            if (EntityManager.HasComponent<ElectricalDoor>(entities[i])
+                || EntityManager.HasComponent<ElectricalDropGate>(entities[i]))
                 continue;
 
             var anyPlayerNearby = false;
