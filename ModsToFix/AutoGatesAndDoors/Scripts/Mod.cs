@@ -1,4 +1,5 @@
 using PugMod;
+using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -15,14 +16,19 @@ public class AutoGatesAndDoorsMod : IMod
     public void EarlyInit()
     {
         Debug.Log($"[{MOD_NAME}]: Mod version: {MOD_VERSION}");
-        modInfo = GetModInfo(this);
-        if (modInfo == null)
+        _modInfo = GetModInfo(this);
+        if (_modInfo == null)
         {
-            Debug.Log($"[{NAME}]: Failed to load {NAME}: mod metadata not found!");
+            Debug.Log($"[{MOD_NAME}]: Failed to load {MOD_NAME}: mod metadata not found!");
             return;
         }
 
-        Debug.Log($"[{NAME}]: Mod loaded successfully");
+        Debug.Log($"[{MOD_NAME}]: Mod loaded successfully");
+    }
+
+    public static LoadedMod GetModInfo(IMod mod)
+    {
+        return API.ModLoader.LoadedMods.FirstOrDefault(modInfo => modInfo.Handlers.Contains(mod));
     }
 
     public void Init() { }
