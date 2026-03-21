@@ -12,7 +12,7 @@ using UnityEngine;
 public class AutoGatesAndDoorsMod : IMod
 {
     public const string MOD_NAME = "AutoGatesAndDoors";
-    public const string MOD_VERSION = "0.0.51";
+    public const string MOD_VERSION = "0.0.57";
     private LoadedMod _modInfo;
 
     public void EarlyInit()
@@ -276,6 +276,12 @@ public partial class ProximityLatchCoordinator : PugSimulationSystemBase
         }
     }
 }
+
+
+
+
+
+
 
 
 
